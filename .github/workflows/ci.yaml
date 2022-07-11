@@ -85,8 +85,7 @@ jobs:
             export ARM_ENVIRONMENT=usgovernment
             az cloud set --name AzureUSGovernment
             az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"
-            
-            
+                       
             which terraform
             terraform --version
             
@@ -95,12 +94,13 @@ jobs:
                        
             cd /PyBuilder/working/dsop_rke2/${{ github.run_number }}
             
-            DIRECTORY=$(dirname $0)
+            # DIRECTORY=$(dirname $0)
+            
             KV_NAME=${1:-$(terraform output -raw kv_name)}
            
             echo "::set-output name=kvname::$KV_NAME"
             
-            source ../scripts/fetch-kubeconfig.sh
+            # source ../scripts/fetch-kubeconfig.sh
             kubectl version
 
 
