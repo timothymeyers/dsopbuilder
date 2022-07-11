@@ -49,7 +49,7 @@ RUN apt-get update && apt-get install -y \
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
 # Terraform
-RUN wget https://releases.hashicorp.com/terraform/1.1.7/terraform_1.1.7_linux_arm64.zip
+RUN wget https://releases.hashicorp.com/terraform/1.1.7/terraform_1.1.7_linux_amd64.zip
 RUN unzip terraform*.zip
 RUN mv terraform /usr/local/bin
 
