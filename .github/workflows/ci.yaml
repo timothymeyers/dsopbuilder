@@ -71,19 +71,21 @@ jobs:
             az cloud set --name AzureUSGovernment
             az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"
             
+            which terraform
+            terraform --version
             
             # yes 2> /dev/null | python3 main.py rke2 apply --project ${{ github.run_number }}
-            python3 main.py rke2 apply --project ${{ github.run_number }} < <(yes)
+            # python3 main.py rke2 apply --project ${{ github.run_number }} < <(yes)
                        
-            cd /PyBuilder/working/dsop_rke2/${{ github.run_number }}
+            # cd /PyBuilder/working/dsop_rke2/${{ github.run_number }}
             
-            DIRECTORY=$(dirname $0)
-            KV_NAME=${1:-$(terraform output -raw kv_name)}
+            # DIRECTORY=$(dirname $0)
+            # KV_NAME=${1:-$(terraform output -raw kv_name)}
            
             echo "::set-output name=kvname::$KV_NAME"
             
-            source ../scripts/fetch-kubeconfig.sh
-            kubectl version
+            # source ../scripts/fetch-kubeconfig.sh
+            # kubectl version
 
 
   test-aks:
