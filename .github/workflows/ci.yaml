@@ -1,0 +1,67 @@
+name: Container CI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Build and export
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: false
+          tags: dsopbuilder:build-${{ github.run_number }}
+          outputs: type=docker,dest=/tmp/dsopbuilder.tar
+      -
+        name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: myimage
+          path: /tmp/dsopbuilder.tar
+
+  test-rke2:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: dsopbuilder
+          path: /tmp
+      -
+        name: Load image
+        run: |
+          docker load --input /tmp/dsopbuilder.tar
+          docker image ls -a
+          
+  test-aks:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: dsopbuilder
+          path: /tmp
+      -
+        name: Load image
+        run: |
+          docker load --input /tmp/dsopbuilder.tar
+          docker image ls -a
