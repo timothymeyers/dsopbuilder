@@ -67,6 +67,7 @@ jobs:
     
       - name: Deploy RKE2
         id: deploy_rke2
+        continue-on-error: true
         uses: addnab/docker-run-action@v3
         with:
           image: dsopbuilder:build-${{ github.run_number }}         
@@ -84,24 +85,35 @@ jobs:
             export ARM_SUBSCRIPTION_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .subscriptionId | tr -d '"')
             export ARM_ENVIRONMENT=usgovernment
             az cloud set --name AzureUSGovernment
-            az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"
-                       
-            which terraform
-            terraform --version
+            az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"         
             
             # yes 2> /dev/null | python3 main.py rke2 apply --project ${{ github.run_number }}
             python3 main.py rke2 apply --project ${{ github.run_number }} < <(yes)
                        
             cd /PyBuilder/working/dsop_rke2/${{ github.run_number }}
-            
-            # DIRECTORY=$(dirname $0)
+            ls -lah
+            sleep 30
             
             KV_NAME=${1:-$(terraform output -raw kv_name)}
            
             echo "::set-output name=kvname::$KV_NAME"
             
-            # source ../scripts/fetch-kubeconfig.sh
+            source ../scripts/fetch-kubeconfig.sh
+            cat rke2.kubeconfig
+
             kubectl version
+      
+     
+      - uses: Azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_GOV_CREDENTIALS }}
+          environment: azureusgovernmentcloud
+      
+      - name: Clean-up
+        run: |
+          az group delete --name dsop-rke2 --yes --no-wait
+         
+
 
 
   test-aks:
