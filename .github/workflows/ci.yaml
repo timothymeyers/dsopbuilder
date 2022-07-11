@@ -28,13 +28,15 @@ jobs:
         run: |
           apt-get update && apt-get install gnupg curl
         
-          docker build -t dsopbuilder:build-${{ github.run_number }} --output type=tar,dest=dsopbuilder.tar .
+          docker build -t dsopbuilder:build-${{ github.run_number }} --output type=tar,dest=/tmp/dsopbuilder.tar .
+          ls -lah /tmp
+          
       -
         name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: dsopbuilder
-          path: dsopbuilder.tar
+          path: /tmp/dsopbuilder.tar
 
   test-rke2:
     runs-on: ubuntu-22.04
