@@ -31,6 +31,7 @@ jobs:
 
   test-rke2:
     runs-on: ubuntu-latest
+    needs: build
     outputs:
       kvname: ${{ steps.deploy_rke2.outputs.kvname }}
 
