@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       -
         name: Checkout
@@ -30,7 +30,7 @@ jobs:
           path: /tmp/dsopbuilder.tar
 
   test-rke2:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: build
     outputs:
       kvname: ${{ steps.deploy_rke2.outputs.kvname }}
@@ -86,7 +86,7 @@ jobs:
 
 
   test-aks:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: build
     steps:
       -
