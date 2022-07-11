@@ -72,8 +72,12 @@ jobs:
           image: dsopbuilder:build-${{ github.run_number }}         
           shell: bash
           run: | 
-            # cp -f /transfer/config.json config/config.json
             
+            # Install AMD64 terraform to make GH Action Runner happy
+            wget https://releases.hashicorp.com/terraform/1.1.7/terraform_1.1.7_linux_amd64.zip
+            unzip terraform*.zip
+            mv terraform /usr/local/bin
+                        
             export ARM_TENANT_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .tenantId | tr -d '"')
             export ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"')
             export ARM_CLIENT_SECRET=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"')
@@ -82,23 +86,22 @@ jobs:
             az cloud set --name AzureUSGovernment
             az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"
             
-            uname -a
             
             which terraform
             terraform --version
             
             # yes 2> /dev/null | python3 main.py rke2 apply --project ${{ github.run_number }}
-            # python3 main.py rke2 apply --project ${{ github.run_number }} < <(yes)
+            python3 main.py rke2 apply --project ${{ github.run_number }} < <(yes)
                        
-            # cd /PyBuilder/working/dsop_rke2/${{ github.run_number }}
+            cd /PyBuilder/working/dsop_rke2/${{ github.run_number }}
             
-            # DIRECTORY=$(dirname $0)
-            # KV_NAME=${1:-$(terraform output -raw kv_name)}
+            DIRECTORY=$(dirname $0)
+            KV_NAME=${1:-$(terraform output -raw kv_name)}
            
             echo "::set-output name=kvname::$KV_NAME"
             
-            # source ../scripts/fetch-kubeconfig.sh
-            # kubectl version
+            source ../scripts/fetch-kubeconfig.sh
+            kubectl version
 
 
   test-aks:
