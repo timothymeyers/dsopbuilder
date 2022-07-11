@@ -69,9 +69,6 @@ jobs:
             export ARM_ENVIRONMENT=usgovernment
             az cloud set --name AzureUSGovernment
             az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"
-            python3 main.py settings --help
-            python3 main.py settings validate
-            python3 main.py settings list
             yes 2> /dev/null | python3 main.py rke2 apply --project ${{ github.run_number }}
             cd /PyBuilder/working/dsop_rke2/${{ github.run_number }}
             
