@@ -26,7 +26,7 @@ jobs:
         name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: myimage
+          name: dsopbuilder
           path: /tmp/dsopbuilder.tar
 
   test-rke2:
@@ -47,7 +47,8 @@ jobs:
         run: |
           docker load --input /tmp/dsopbuilder.tar
           docker image ls -a
-          
+          docker run "dsopbuilder:build-${{ github.run_number }}" cd /PyBuilder && python3 main.py settings validate          
+
   test-aks:
     runs-on: ubuntu-latest
     needs: build
@@ -66,3 +67,5 @@ jobs:
         run: |
           docker load --input /tmp/dsopbuilder.tar
           docker image ls -a
+          docker run "dsopbuilder:build-${{ github.run_number }}" cd /PyBuilder && python3 main.py settings validate
+          
