@@ -52,7 +52,8 @@ jobs:
         run: |
           docker load --input /tmp/dsopbuilder.tar
           docker image ls -a
-          docker run "dsopbuilder:build-${{ github.run_number }}" python3 main.py settings validate --rke2      
+          docker run "dsopbuilder:build-${{ github.run_number }}" python3 main.py settings validate --rke2
+          uname -a
     
       - name: Deploy RKE2
         id: deploy_rke2
@@ -70,6 +71,8 @@ jobs:
             export ARM_ENVIRONMENT=usgovernment
             az cloud set --name AzureUSGovernment
             az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"
+            
+            uname -a
             
             which terraform
             terraform --version
