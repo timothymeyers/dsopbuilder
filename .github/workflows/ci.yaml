@@ -21,7 +21,7 @@ jobs:
         with:
           context: .
           push: false
-          platforms: linux/arm_64,linux/amd_64
+          platforms: linux/arm_64
           tags: dsopbuilder:build-${{ github.run_number }}
           outputs: type=docker,dest=/tmp/dsopbuilder.tar
       -
