@@ -29,6 +29,8 @@ jobs:
           apt-get update && apt-get install gnupg curl
         
           docker build -t dsopbuilder:build-${{ github.run_number }} . --output type=tar,dest=./dsopbuilder.tar
+          docker save dsopbuilder:build-${{ github.run_number }} --output ./dsopbuilder.tar
+          
           ls -lah .
           
       -
