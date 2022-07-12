@@ -40,7 +40,82 @@ jobs:
           name: dsopbuilder
           path: ./dsopbuilder.tar
 
-  test-k8s:
+  test-k8s-on-gov:
+    runs-on: ubuntu-22.04
+    needs: build
+    strategy:
+      matrix:
+        flavor: ['rke2', 'aks']
+    outputs:
+      kvname: ${{ steps.deploy_rke2.outputs.kvname }}
+
+    steps:
+      - uses: actions/checkout@v2
+      -
+        name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: dsopbuilder
+          path: /tmp
+      -
+        name: Load image
+        run: |
+          docker load --input /tmp/dsopbuilder.tar
+          docker image ls -a
+          docker run "dsopbuilder:build-${{ github.run_number }}" python3 main.py settings validate --${{ matrix.flavor }}
+    
+      - name: Deploy Kubernetes
+        id: deploy_k8s
+        continue-on-error: true
+        uses: addnab/docker-run-action@v3
+        with:
+          image: dsopbuilder:build-${{ github.run_number }}         
+          shell: bash
+          run: | 
+            
+            # Install AMD64 terraform to make GH Action Runner happy
+            wget https://releases.hashicorp.com/terraform/1.1.7/terraform_1.1.7_linux_amd64.zip
+            unzip terraform*.zip
+            mv terraform /usr/local/bin
+
+            echo ${{ secrets.AKS_GOV_CONFIG }} > config/config-aks.json
+            echo ${{ secrets.RKE2_GOV_CONFIG }} > config/config-rke2.json
+
+            export ARM_TENANT_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .tenantId | tr -d '"')
+            export ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"')
+            export ARM_CLIENT_SECRET=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"')
+            export ARM_SUBSCRIPTION_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .subscriptionId | tr -d '"')
+            export ARM_ENVIRONMENT=usgovernment
+            
+            az cloud set --name AzureUSGovernment
+            az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"         
+            
+            # yes 2> /dev/null | python3 main.py ${{ matrix.flavor }} apply --project ${{ github.run_number }}
+            python3 main.py ${{ matrix.flavor }} apply --project ${{ github.run_number }} < <(yes)
+                       
+            cd /PyBuilder/working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
+            ls -lah
+            sleep 30
+            
+            if [ ${{matrix.flavor}} = "rke2" ]; then           
+              KV_NAME=${1:-$(terraform output -raw kv_name)}
+              echo "::set-output name=kvname::$KV_NAME"
+              source ../scripts/fetch-kubeconfig.sh
+              cat rke2.kubeconfig
+              kubectl version
+            fi
+     
+      - uses: Azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_GOV_CREDENTIALS }}
+          environment: azureusgovernment
+      
+      - name: Clean-up
+        run: |
+          az group delete --name dsop-${{ matrix.flavor }}-rg --yes
+         
+
+  test-k8s-on-commercial:
     runs-on: ubuntu-22.04
     needs: build
     strategy:
@@ -78,13 +153,14 @@ jobs:
             unzip terraform*.zip
             mv terraform /usr/local/bin
                         
-            export ARM_TENANT_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .tenantId | tr -d '"')
-            export ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"')
-            export ARM_CLIENT_SECRET=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"')
-            export ARM_SUBSCRIPTION_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .subscriptionId | tr -d '"')
-            export ARM_ENVIRONMENT=usgovernment
-            
-            az cloud set --name AzureUSGovernment
+            echo ${{ secrets.AKS_PUB_CONFIG }} > config/config-aks.json
+            echo ${{ secrets.RKE2_PUB_CONFIG }} > config/config-rke2.json
+
+            export ARM_TENANT_ID=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .tenantId | tr -d '"')
+            export ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"')
+            export ARM_CLIENT_SECRET=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"')
+            export ARM_SUBSCRIPTION_ID=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .subscriptionId | tr -d '"')
+
             az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"         
             
             # yes 2> /dev/null | python3 main.py ${{ matrix.flavor }} apply --project ${{ github.run_number }}
@@ -104,10 +180,17 @@ jobs:
      
       - uses: Azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_GOV_CREDENTIALS }}
-          environment: azureusgovernment
+          creds: ${{ secrets.AZURE_PUB_CREDENTIALS }}
       
       - name: Clean-up
         run: |
           az group delete --name dsop-${{ matrix.flavor }}-rg --yes
          
+
+  final:
+    runs-on: ubuntu-22.04
+    needs: test-k8s-on-gov
+    steps:
+      - name: Hello
+        run: |
+        echo "Hello"
