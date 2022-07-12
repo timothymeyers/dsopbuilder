@@ -44,8 +44,10 @@ jobs:
     runs-on: ubuntu-22.04
     needs: build
     strategy:
+      fail-fast: false
       matrix:
         flavor: ['rke2', 'aks']
+        cloud:  ['gov']
     outputs:
       kvname: ${{ steps.deploy_rke2.outputs.kvname }}
 
@@ -112,6 +114,7 @@ jobs:
             fi
      
       - uses: Azure/login@v1
+        if: ${{ matrix.cloud }} == 'gov'
         with:
           creds: ${{ secrets.AZURE_GOV_CREDENTIALS }}
           environment: azureusgovernment
@@ -125,6 +128,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: build
     strategy:
+      fail-fast: false
       matrix:
         flavor: ['rke2', 'aks']
     outputs:
