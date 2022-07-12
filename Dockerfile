@@ -96,7 +96,7 @@ RUN pip install pipreqs \
     && pip install -r requirements.txt
     
 # Prepare RKE2 working
-RUN git clone https://github.com/p1-dsop/dsop-rke2 working/dsop_rke2
+RUN git clone -b fix-rke2-rg-name --single-branch https://github.com/timothymeyers/dsop-rke2 working/dsop_rke2
 
 RUN chmod +x working/dsop_rke2/scripts/check-terraform.sh
 RUN chmod +x working/dsop_rke2/scripts/fetch-kubeconfig.sh
