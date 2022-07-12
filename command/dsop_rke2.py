@@ -57,6 +57,7 @@ def apply(
         stream.create_project_dir()
         with console.status("Applying Config settings...", spinner="earth"):
             logger.debug("Applying config settings")
+            splice_file_token(_terraform_file,"resource_group_name", f"{_app_settings.settings['general']['cluster_name']}-rg")
             splice_file_token(_terraform_file,"cluster_name", _app_settings.settings["general"]["cluster_name"])
             splice_file_token(_terraform_file, "cloud", _app_settings.settings["general"]["cloud"])
             splice_file_token(_terraform_file, "location", _app_settings.settings["general"]["location"])
