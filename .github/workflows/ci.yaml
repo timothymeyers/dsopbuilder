@@ -78,8 +78,13 @@ jobs:
             unzip terraform*.zip
             mv terraform /usr/local/bin
 
-            echo ${{ secrets.AKS_GOV_CONFIG }} > config/config-aks.json
-            echo ${{ secrets.RKE2_GOV_CONFIG }} > config/config-rke2.json
+            cat << EOF >  config/config-aks.json
+            ${{ secrets.AKS_GOV_CONFIG }}
+            EOF
+            
+            cat << EOF >  config/config-rke2.json
+            ${{ secrets.RKE2_GOV_CONFIG }}
+            EOF
 
             export ARM_TENANT_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .tenantId | tr -d '"')
             export ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"')
@@ -91,6 +96,7 @@ jobs:
             az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"         
             
             # yes 2> /dev/null | python3 main.py ${{ matrix.flavor }} apply --project ${{ github.run_number }}
+            python3 main.py settings validate --${{ matrix.flavor }}
             python3 main.py ${{ matrix.flavor }} apply --project ${{ github.run_number }} < <(yes)
                        
             cd /PyBuilder/working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
@@ -152,9 +158,14 @@ jobs:
             wget https://releases.hashicorp.com/terraform/1.1.7/terraform_1.1.7_linux_amd64.zip
             unzip terraform*.zip
             mv terraform /usr/local/bin
-                        
-            echo ${{ secrets.AKS_PUB_CONFIG }} > config/config-aks.json
-            echo ${{ secrets.RKE2_PUB_CONFIG }} > config/config-rke2.json
+                                 
+            cat << EOF >  config/config-aks.json
+            ${{ secrets.AKS_PUB_CONFIG }}
+            EOF
+            
+            cat << EOF >  config/config-rke2.json
+            ${{ secrets.RKE2_PUB_CONFIG }}
+            EOF
 
             export ARM_TENANT_ID=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .tenantId | tr -d '"')
             export ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"')
