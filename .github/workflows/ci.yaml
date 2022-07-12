@@ -109,5 +109,5 @@ jobs:
       
       - name: Clean-up
         run: |
-          az group delete --name dsop-${{ matrix.flavor }}-rg --yes --no-wait
+          az group delete --name dsop-${{ matrix.flavor }}-rg --yes
          
