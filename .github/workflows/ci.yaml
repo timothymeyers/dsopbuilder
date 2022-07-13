@@ -40,7 +40,7 @@ jobs:
           name: dsopbuilder
           path: ./dsopbuilder.tar
 
-  test-k8s:
+  deploy-k8s:
     runs-on: ubuntu-22.04
     needs: build
     strategy:
@@ -142,7 +142,54 @@ jobs:
         with:
           name: ${{ matrix.flavor }}-${{ matrix.cloud }}
           path: ${{ matrix.flavor }}-${{ matrix.cloud }}.tar
-     
+
+  install-bigbang:
+    runs-on: ubuntu-22.04
+    needs: deploy-k8s
+    strategy:
+      fail-fast: false
+      matrix:
+        cloud:  ['gov', 'commercial']
+        flavor: ['rke2', 'aks']
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ matrix.flavor }}-${{ matrix.cloud }}
+          path: /tmp
+      - name: Hello
+        run: |
+          echo "Hello"
+          ls -lah /tmp/
+
+  verify-bigbang:
+    runs-on: ubuntu-22.04
+    needs: install-bigbang
+    strategy:
+      fail-fast: false
+      matrix:
+        cloud:  ['gov', 'commercial']
+        flavor: ['rke2', 'aks']
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ matrix.flavor }}-${{ matrix.cloud }}
+          path: /tmp
+      - name: Hello
+        run: |
+          echo "Hello"
+          ls -lah /tmp/
+
+  clean-up:
+    runs-on: ubuntu-22.04
+    needs: verify-bigbang    
+    strategy:
+      fail-fast: false
+      matrix:
+        cloud:  ['gov', 'commercial']
+        flavor: ['rke2', 'aks']
+    steps:
       - name: Login to Azure Gov
         uses: Azure/login@v1
         if: matrix.cloud == 'gov'
@@ -160,22 +207,4 @@ jobs:
         run: |
           az group delete --name dsop-${{ matrix.flavor }}-ci-rg --yes
           az group list -o table
-
-  final:
-    runs-on: ubuntu-22.04
-    needs: test-k8s
-    strategy:
-      fail-fast: false
-      matrix:
-        cloud:  ['gov', 'commercial']
-        flavor: ['rke2', 'aks']
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: ${{ matrix.flavor }}-${{ matrix.cloud }}
-          path: /tmp
-      - name: Hello
-        run: |
-          echo "Hello"
           ls -lah /tmp/
