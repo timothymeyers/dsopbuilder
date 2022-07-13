@@ -72,6 +72,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: dsopbuilder:build-${{ github.run_number }}         
+          options: -v /home/runner/work/dsopbuilder/dsopbuilder:/transfer
           shell: bash
           run: | 
             
@@ -121,7 +122,7 @@ jobs:
             python3 main.py settings list --${{ matrix.flavor }}
             python3 main.py ${{ matrix.flavor }} apply --project ${{ github.run_number }} < <(yes)
                        
-            tar cvf ${{ matrix.flavor }}-${{ matrix.cloud }}.tar working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
+            tar cvf /transfer/${{ matrix.flavor }}-${{ matrix.cloud }}.tar working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
             ls -lah /PyBuilder
             
             cd /PyBuilder/working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
@@ -140,7 +141,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.flavor }}-${{ matrix.cloud }}
-          path: /PyBuilder/${{ matrix.flavor }}-${{ matrix.cloud }}.tar
+          path: ${{ matrix.flavor }}-${{ matrix.cloud }}.tar
      
       - name: Login to Azure Gov
         uses: Azure/login@v1
