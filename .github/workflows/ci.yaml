@@ -118,7 +118,7 @@ jobs:
             
             # yes 2> /dev/null | python3 main.py ${{ matrix.flavor }} apply --project ${{ github.run_number }}
             python3 main.py settings validate --${{ matrix.flavor }}
-            python3 main.py settings list
+            python3 main.py settings list --${{ matrix.flavor }}
             python3 main.py ${{ matrix.flavor }} apply --project ${{ github.run_number }} < <(yes)
                        
             cd /PyBuilder/working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
