@@ -40,7 +40,7 @@ jobs:
           name: dsopbuilder
           path: ./dsopbuilder.tar
 
-  test-k8s-on-gov:
+  test-k8s:
     runs-on: ubuntu-22.04
     needs: build
     strategy:
@@ -81,7 +81,6 @@ jobs:
             mv terraform /usr/local/bin
 
             if [ ${{ matrix.cloud }} = 'gov' ]; then          
-
               cat << EOF >  config/config-aks.json
               ${{ secrets.AKS_GOV_CONFIG }}
               EOF
@@ -150,7 +149,7 @@ jobs:
 
   final:
     runs-on: ubuntu-22.04
-    needs: test-k8s-on-gov
+    needs: test-k8s
     steps:
       - name: Hello
         run: |
