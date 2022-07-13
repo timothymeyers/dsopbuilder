@@ -46,8 +46,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        flavor: ['rke2', 'aks']
         cloud:  ['gov', 'commercial']
+        flavor: ['rke2', 'aks']
     outputs:
       kvname: ${{ steps.deploy_rke2.outputs.kvname }}
 
@@ -133,14 +133,16 @@ jobs:
               kubectl version
             fi
      
-      - uses: Azure/login@v1
-        if: ${{ matrix.cloud }} == 'gov'
+      - name: Login to Azure Gov
+        uses: Azure/login@v1
+        if: ${{ matrix.cloud == "gov" }}
         with:
           creds: ${{ secrets.AZURE_GOV_CREDENTIALS }}
           environment: azureusgovernment
       
-      - uses: Azure/login@v1
-        if: ${{ matrix.cloud }} == 'commercial'
+      - name: Login to Azure Commercial
+        uses: Azure/login@v1
+        if: ${{ matrix.cloud == "commercial" }}
         with:
           creds: ${{ secrets.AZURE_PUB_CREDENTIALS }}
       
