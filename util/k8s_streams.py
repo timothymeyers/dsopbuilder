@@ -30,7 +30,7 @@ class K8S_Stream (Stream):
         #cp -R <source_folder>/* <destination_folder>
 
     def _run_terraform_init(self):
-        res = run_process(['terraform', f"-chdir={self.get_project_dir()}" ,'init'])      
+        res = run_process(['terraform', f"-chdir={self.get_project_dir()}" ,'init'],shell=True)      
 
     def _copy_scripts(self):
         logger.debug(f"Copying script files to example directory")

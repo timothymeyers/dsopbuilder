@@ -18,6 +18,7 @@ ENV KUBECTL_VER="v1.23.1"
 # https://jhooq.com/failed-to-get-the-data-key/
 ENV GPG_TTY="/dev/pts/0"
 
+RUN apt-get update && apt-get install -y curl gpg gnupg
 
 # apt-get
 RUN curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null
@@ -48,6 +49,7 @@ RUN apt-get update && apt-get install -y \
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | sed 's/install -y azure-cli/install -y azure-cli=2.36.0-1~jammy/' |bash
 
 # Terraform
+#RUN wget https://releases.hashicorp.com/terraform/1.1.7/terraform_1.1.7_linux_amd64.zip
 RUN wget https://releases.hashicorp.com/terraform/1.1.7/terraform_1.1.7_linux_arm64.zip
 RUN unzip terraform*.zip
 RUN mv terraform /usr/local/bin
@@ -90,7 +92,8 @@ RUN pip install pipreqs \
     && pip install -r requirements.txt
 
 # Prepare RKE2 working
-RUN git clone https://github.com/p1-dsop/dsop-rke2 working/dsop_rke2
+RUN git clone -b fix-rke2-rg-name --single-branch https://github.com/timothymeyers/dsop-rke2 working/dsop_rke2
+#RUN git clone https://github.com/p1-dsop/dsop-rke2 working/dsop_rke2
 
 RUN chmod +x working/dsop_rke2/scripts/check-terraform.sh
 RUN chmod +x working/dsop_rke2/scripts/fetch-kubeconfig.sh

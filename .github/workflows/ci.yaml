@@ -1,0 +1,157 @@
+name: Container CI
+
+on:
+  push:
+  workflow_dispatch:
+
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      #-
+      #  name: Set up Docker Buildx
+      #  uses: docker/setup-buildx-action@v2
+      #-
+      #  name: Build and export
+      #  uses: docker/build-push-action@v3
+      #  with:
+      #    context: .
+      #    push: false
+      #    platforms: linux/arm_64
+      #    tags: dsopbuilder:build-${{ github.run_number }}
+      #    outputs: type=docker,dest=/tmp/dsopbuilder.tar
+      - name: Build and export
+        run: |
+          apt-get update && apt-get install gnupg curl
+        
+          docker build -t dsopbuilder:build-${{ github.run_number }} . --output type=tar,dest=./dsopbuilder.tar
+          docker save dsopbuilder:build-${{ github.run_number }} --output ./dsopbuilder.tar
+          
+          ls -lah .
+          
+      -
+        name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: dsopbuilder
+          path: ./dsopbuilder.tar
+
+  test-k8s:
+    runs-on: ubuntu-22.04
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor: ['rke2', 'aks']
+        cloud:  ['gov', 'commercial']
+    outputs:
+      kvname: ${{ steps.deploy_rke2.outputs.kvname }}
+
+    steps:
+      - uses: actions/checkout@v2
+      -
+        name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: dsopbuilder
+          path: /tmp
+      -
+        name: Load image
+        run: |
+          docker load --input /tmp/dsopbuilder.tar
+          docker image ls -a
+          docker run "dsopbuilder:build-${{ github.run_number }}" python3 main.py settings validate --${{ matrix.flavor }}
+    
+      - name: Deploy Kubernetes
+        id: deploy_k8s
+        continue-on-error: true
+        uses: addnab/docker-run-action@v3
+        with:
+          image: dsopbuilder:build-${{ github.run_number }}         
+          shell: bash
+          run: | 
+            
+            # Install AMD64 terraform to make GH Action Runner happy
+            wget https://releases.hashicorp.com/terraform/1.1.7/terraform_1.1.7_linux_amd64.zip
+            unzip terraform*.zip
+            mv terraform /usr/local/bin
+
+            if [ ${{ matrix.cloud }} = "gov" ]; then
+            
+            cat << EOF >  config/config-aks.json
+            ${{ secrets.AKS_GOV_CONFIG }}
+            EOF
+
+            cat << EOF >  config/config-rke2.json
+            ${{ secrets.RKE2_GOV_CONFIG }}
+            EOF
+
+            export ARM_TENANT_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .tenantId | tr -d '"')
+            export ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"')
+            export ARM_CLIENT_SECRET=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"')
+            export ARM_SUBSCRIPTION_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .subscriptionId | tr -d '"')
+            export ARM_ENVIRONMENT=usgovernment
+          
+            az cloud set --name AzureUSGovernment
+              
+            else          
+            cat << EOF >  config/config-aks.json
+            ${{ secrets.AKS_PUB_CONFIG }}
+            EOF
+
+            cat << EOF >  config/config-rke2.json
+            ${{ secrets.RKE2_PUB_CONFIG }}
+            EOF
+
+            export ARM_TENANT_ID=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .tenantId | tr -d '"')
+            export ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"')
+            export ARM_CLIENT_SECRET=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"')
+            export ARM_SUBSCRIPTION_ID=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .subscriptionId | tr -d '"')              
+          
+            fi
+              
+            az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"         
+            
+            # yes 2> /dev/null | python3 main.py ${{ matrix.flavor }} apply --project ${{ github.run_number }}
+            python3 main.py settings validate --${{ matrix.flavor }}
+            python3 main.py settings list
+            python3 main.py ${{ matrix.flavor }} apply --project ${{ github.run_number }} < <(yes)
+                       
+            cd /PyBuilder/working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
+            ls -lah
+            sleep 30
+            
+            if [ ${{matrix.flavor}} = "rke2" ]; then
+              KV_NAME=${1:-$(terraform output -raw kv_name)}
+              echo "::set-output name=kvname::$KV_NAME"
+              source ../scripts/fetch-kubeconfig.sh
+              cat rke2.kubeconfig
+              kubectl version
+            fi
+     
+      - uses: Azure/login@v1
+        if: ${{ matrix.cloud }} == 'gov'
+        with:
+          creds: ${{ secrets.AZURE_GOV_CREDENTIALS }}
+          environment: azureusgovernment
+      
+      - uses: Azure/login@v1
+        if: ${{ matrix.cloud }} == 'commercial'
+        with:
+          creds: ${{ secrets.AZURE_PUB_CREDENTIALS }}
+      
+      - name: Clean-up
+        run: |
+          az group delete --name dsop-${{ matrix.flavor }}-rg --yes    
+
+  final:
+    runs-on: ubuntu-22.04
+    needs: test-k8s
+    steps:
+      - name: Hello
+        run: |
+          echo "Hello"
