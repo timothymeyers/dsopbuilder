@@ -80,7 +80,7 @@ jobs:
             unzip terraform*.zip
             mv terraform /usr/local/bin
 
-            if [ ${{ matrix.cloud }} = 'gov' ]; then          
+            if [ ${{ matrix.cloud }} = "gov" ]; then          
               cat << EOF >  config/config-aks.json
               ${{ secrets.AKS_GOV_CONFIG }}
               EOF
