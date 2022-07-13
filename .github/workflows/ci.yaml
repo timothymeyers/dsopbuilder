@@ -82,37 +82,36 @@ jobs:
 
             if [ ${{ matrix.cloud }} = "gov" ]; then
             
-              cat << EOF >  config/config-aks.json
-${{ secrets.AKS_GOV_CONFIG }}
-EOF
+            cat << EOF >  config/config-aks.json
+            ${{ secrets.AKS_GOV_CONFIG }}
+            EOF
 
-              cat << EOF >  config/config-rke2.json
-${{ secrets.RKE2_GOV_CONFIG }}
-EOF
+            cat << EOF >  config/config-rke2.json
+            ${{ secrets.RKE2_GOV_CONFIG }}
+            EOF
 
-              export ARM_TENANT_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .tenantId | tr -d '"')
-              export ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"')
-              export ARM_CLIENT_SECRET=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"')
-              export ARM_SUBSCRIPTION_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .subscriptionId | tr -d '"')
-              export ARM_ENVIRONMENT=usgovernment
-            
-              az cloud set --name AzureUSGovernment
+            export ARM_TENANT_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .tenantId | tr -d '"')
+            export ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"')
+            export ARM_CLIENT_SECRET=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"')
+            export ARM_SUBSCRIPTION_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .subscriptionId | tr -d '"')
+            export ARM_ENVIRONMENT=usgovernment
+          
+            az cloud set --name AzureUSGovernment
               
-            else
-            
-              cat << EOF >  config/config-aks.json
-${{ secrets.AKS_PUB_CONFIG }}
-EOF
+            else          
+            cat << EOF >  config/config-aks.json
+            ${{ secrets.AKS_PUB_CONFIG }}
+            EOF
 
-              cat << EOF >  config/config-rke2.json
-${{ secrets.RKE2_PUB_CONFIG }}
-EOF
+            cat << EOF >  config/config-rke2.json
+            ${{ secrets.RKE2_PUB_CONFIG }}
+            EOF
 
-              export ARM_TENANT_ID=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .tenantId | tr -d '"')
-              export ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"')
-              export ARM_CLIENT_SECRET=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"')
-              export ARM_SUBSCRIPTION_ID=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .subscriptionId | tr -d '"')              
-            
+            export ARM_TENANT_ID=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .tenantId | tr -d '"')
+            export ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"')
+            export ARM_CLIENT_SECRET=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"')
+            export ARM_SUBSCRIPTION_ID=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .subscriptionId | tr -d '"')              
+          
             fi
               
             az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"         
