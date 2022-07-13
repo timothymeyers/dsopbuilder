@@ -121,7 +121,8 @@ jobs:
             python3 main.py settings list --${{ matrix.flavor }}
             python3 main.py ${{ matrix.flavor }} apply --project ${{ github.run_number }} < <(yes)
                        
-            tar cvf ${{ matrix.flavor }}-${{ matrix.cloud }}.tar /PyBuilder/working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
+            tar cvf ${{ matrix.flavor }}-${{ matrix.cloud }}.tar working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
+            ls -lah /PyBuilder
             
             cd /PyBuilder/working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
             ls -lah
@@ -139,7 +140,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.flavor }}-${{ matrix.cloud }}
-          path: ${{ matrix.flavor }}-${{ matrix.cloud }}.tar
+          path: /PyBuilder/${{ matrix.flavor }}-${{ matrix.cloud }}.tar
      
       - name: Login to Azure Gov
         uses: Azure/login@v1
