@@ -157,7 +157,8 @@ jobs:
       
       - name: Clean-up
         run: |
-          az group delete --name dsop-${{ matrix.flavor }}-ci-rg --yes    
+          az group delete --name dsop-${{ matrix.flavor }}-ci-rg --yes
+          az group list -o table
 
   final:
     runs-on: ubuntu-22.04
