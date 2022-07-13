@@ -135,14 +135,14 @@ jobs:
      
       - name: Login to Azure Gov
         uses: Azure/login@v1
-        if: ${{ matrix.cloud == "gov" }}
+        if: matrix.cloud == 'gov'
         with:
           creds: ${{ secrets.AZURE_GOV_CREDENTIALS }}
           environment: azureusgovernment
       
       - name: Login to Azure Commercial
         uses: Azure/login@v1
-        if: ${{ matrix.cloud == "commercial" }}
+        if: matrix.cloud == 'commercial'
         with:
           creds: ${{ secrets.AZURE_PUB_CREDENTIALS }}
       
