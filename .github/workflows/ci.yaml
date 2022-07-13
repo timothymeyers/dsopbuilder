@@ -80,14 +80,15 @@ jobs:
             unzip terraform*.zip
             mv terraform /usr/local/bin
 
-            if [ ${{ matrix.cloud }} = "gov" ]; then          
+            if [ ${{ matrix.cloud }} = "gov" ]; then
+            
               cat << EOF >  config/config-aks.json
-              ${{ secrets.AKS_GOV_CONFIG }}
-              EOF
+${{ secrets.AKS_GOV_CONFIG }}
+EOF
 
               cat << EOF >  config/config-rke2.json
-              ${{ secrets.RKE2_GOV_CONFIG }}
-              EOF
+${{ secrets.RKE2_GOV_CONFIG }}
+EOF
 
               export ARM_TENANT_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .tenantId | tr -d '"')
               export ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"')
@@ -100,12 +101,12 @@ jobs:
             else
             
               cat << EOF >  config/config-aks.json
-              ${{ secrets.AKS_PUB_CONFIG }}
-              EOF
+${{ secrets.AKS_PUB_CONFIG }}
+EOF
 
               cat << EOF >  config/config-rke2.json
-              ${{ secrets.RKE2_PUB_CONFIG }}
-              EOF
+${{ secrets.RKE2_PUB_CONFIG }}
+EOF
 
               export ARM_TENANT_ID=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .tenantId | tr -d '"')
               export ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"')
@@ -124,7 +125,7 @@ jobs:
             ls -lah
             sleep 30
             
-            if [ ${{matrix.flavor}} = "rke2" ]; then           
+            if [ ${{matrix.flavor}} = "rke2" ]; then
               KV_NAME=${1:-$(terraform output -raw kv_name)}
               echo "::set-output name=kvname::$KV_NAME"
               source ../scripts/fetch-kubeconfig.sh
