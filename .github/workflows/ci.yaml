@@ -34,7 +34,7 @@ jobs:
           ls -lah .
           
       -
-        name: Upload artifact
+        name: Upload container as artifact
         uses: actions/upload-artifact@v3
         with:
           name: dsopbuilder
@@ -54,7 +54,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       -
-        name: Download artifact
+        name: Download container
         uses: actions/download-artifact@v3
         with:
           name: dsopbuilder
@@ -133,7 +133,7 @@ jobs:
               KV_NAME=${1:-$(terraform output -raw kv_name)}
               echo "::set-output name=kvname::$KV_NAME"
               source ../scripts/fetch-kubeconfig.sh
-              cat rke2.kubeconfig
+              ls -la rke2.kubeconfig
               kubectl version
             fi
             
@@ -152,11 +152,54 @@ jobs:
         cloud:  ['gov', 'commercial']
         flavor: ['rke2', 'aks']
     steps:
-      - name: Download artifact
+      - name: Download container
+        uses: actions/download-artifact@v3
+        with:
+          name: dsopbuilder
+          path: /tmp
+      
+      - name: Download terraform env for ${{ matrix.flavor }}-${{ matrix.cloud }} 
         uses: actions/download-artifact@v3
         with:
           name: ${{ matrix.flavor }}-${{ matrix.cloud }}
           path: /tmp
+      - name: Load image
+        run: |
+          docker load --input /tmp/dsopbuilder.tar
+          docker image ls -a          
+    
+      - name: Deploy Kubernetes
+        id: deploy_k8s
+        continue-on-error: true
+        uses: addnab/docker-run-action@v3
+        with:
+          image: dsopbuilder:build-${{ github.run_number }}         
+          options: -v /tmp:/transfer
+          shell: bash
+          run: | 
+            
+            # Install AMD64 terraform to make GH Action Runner happy
+            wget https://releases.hashicorp.com/terraform/1.1.7/terraform_1.1.7_linux_amd64.zip
+            unzip terraform*.zip
+            mv terraform /usr/local/bin
+            
+            tar xvf /transfer/${{ matrix.flavor }}-${{ matrix.cloud }}.tar
+            
+            cd /PyBuilder/working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
+            ls -lah
+            sleep 30
+            
+            if [ ${{matrix.flavor}} = "rke2" ]; then
+              KV_NAME=${1:-$(terraform output -raw kv_name)}
+              source ../scripts/fetch-kubeconfig.sh
+              ls -la rke2.kubeconfig
+              kubectl version
+              
+            else
+              az aks get-credentials -g $(terraform output -raw rg_name) -n $(terraform output -raw aks_cluster_name)
+              kubectl version 
+            fi
+            
       - name: Hello
         run: |
           echo "Hello"
