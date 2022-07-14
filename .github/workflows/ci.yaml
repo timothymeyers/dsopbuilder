@@ -151,8 +151,8 @@ jobs:
               export KUBECONFIG=$(realpath aks.kubeconfig)
               kubelogin convert-kubeconfig -l spn
 
-              export AAD_SERVICE_PRINCIPAL_CLIENT_ID=$ARM_CLIENT_ID
-              export AAD_SERVICE_PRINCIPAL_CLIENT_SECRET=$ARM_CLIENT_SECRET
+              export AAD_SERVICE_PRINCIPAL_CLIENT_ID=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"')
+              export AAD_SERVICE_PRINCIPAL_CLIENT_SECRET=$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"')
 
               kubectl version 
             fi
@@ -160,7 +160,7 @@ jobs:
             cd /PyBuilder
             tar cvf /transfer/${{ matrix.flavor }}-${{ matrix.cloud }}.tar working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
             ls -lah /PyBuilder/*.tar
-            
+
             
       - name: Upload terraform env
         uses: actions/upload-artifact@v3
@@ -217,7 +217,26 @@ jobs:
             FILE=$(realpath ${{matrix.flavor}}.kubeconfig)
             export KUBECONFIG=$FILE
 
+            if [ ${{ matrix.flavor }} = "aks" ]; then
+              unzip kubelogin*.zip
+              mv bin/linux_amd64/kubelogin /usr/local/bin/kubelogin         
+              kubelogin convert-kubeconfig -l 
+              
+              export AAD_SERVICE_PRINCIPAL_CLIENT_ID=$ARM_CLIENT_ID
+              export AAD_SERVICE_PRINCIPAL_CLIENT_SECRET=$ARM_CLIENT_SECRET
+            fi
+            
             kubectl version 
+
+            cd /PyBuilder
+            sed -i config/config-bigbang.json -e "s/__GH_USER__/${{ secrets.GH_USER }}/g"     
+            sed -i config/config-bigbang.json -e "s/__GH_PAT__/${{ secrets.GH_PAT }}/g"     
+            sed -i config/config-bigbang.json -e "s/__IB_USER__/${{ secrets.IB_USER }}/g"     
+            sed -i config/config-bigbang.json -e "s/__IB_PAT__/${{ secrets.IB_PAT }}/g"     
+            sed -i config/config-bigbang.json -e "s/__GH_REPO__/${{ secrets.BB_REPO }}/g"     
+            sed -i config/config-bigbang.json -e "s/__GH_BRANCH__/ci-bb-${{ matrix.flavor }}-${{ matrix.cloud }}-${{ github.run_number }}/g"     
+            
+            python3 main.py bb deploy
 
             # if [ ${{matrix.flavor}} = "rke2" ]; then
               #KV_NAME=${1:-$(terraform output -raw kv_name)}
