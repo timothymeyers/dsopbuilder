@@ -135,6 +135,10 @@ jobs:
               source ../scripts/fetch-kubeconfig.sh
               ls -la rke2.kubeconfig
               kubectl version
+  
+            else
+              az aks get-credentials -g $(terraform output -raw rg_name) -n $(terraform output -raw aks_cluster_name)
+              kubectl version 
             fi
             
       - name: Upload terraform env
@@ -190,13 +194,17 @@ jobs:
             sleep 30
             
             if [ ${{matrix.flavor}} = "rke2" ]; then
-              KV_NAME=${1:-$(terraform output -raw kv_name)}
-              source ../scripts/fetch-kubeconfig.sh
-              ls -la rke2.kubeconfig
+              #KV_NAME=${1:-$(terraform output -raw kv_name)}
+              #source ../scripts/fetch-kubeconfig.sh
+              #ls -la rke2.kubeconfig
+              
+              FILE=$(realpath rke2.kubeconfig)
+              export KUBECONFIG=$FILE
+              
               kubectl version
               
             else
-              az aks get-credentials -g $(terraform output -raw rg_name) -n $(terraform output -raw aks_cluster_name)
+              #az aks get-credentials -g $(terraform output -raw rg_name) -n $(terraform output -raw aks_cluster_name)
               kubectl version 
             fi
             
