@@ -130,9 +130,9 @@ jobs:
             sleep 30
             
             if [ ${{matrix.flavor}} = "rke2" ]; then
-              KV_NAME=${1:-$(terraform output -raw kv_name)}
-              echo "::set-output name=kvname::$KV_NAME"
-              source ../scripts/fetch-kubeconfig.sh
+              #KV_NAME=${1:-$(terraform output -raw kv_name)}
+              #echo "::set-output name=kvname::$KV_NAME"
+              #source ../scripts/fetch-kubeconfig.sh
               ls -la rke2.kubeconfig
               kubectl version
   
