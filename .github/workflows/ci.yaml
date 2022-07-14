@@ -137,7 +137,18 @@ jobs:
               kubectl version
   
             else
+              # If AKS, need kubelogin for interactive
+
+              wget https://github.com/Azure/kubelogin/releases/download/v0.0.14/kubelogin-linux-amd64.zip
+              unzip kubelogin*.zip
+              mv bin/linux_amd64/kubelogin /usr/local/bin/kubelogin
+
               az aks get-credentials -g $(terraform output -raw rg_name) -n $(terraform output -raw aks_cluster_name)
+              cp /root/.kube/config aks.kubeconfig
+
+              export KUBECONFIG=$(realpath aks.kubeconfig)
+              kubelogin convert-kubeconfig
+
               kubectl version 
             fi
             
@@ -172,8 +183,8 @@ jobs:
           docker load --input /tmp/dsopbuilder.tar
           docker image ls -a          
     
-      - name: Deploy Kubernetes
-        id: deploy_k8s
+      - name: Install Big Bang
+        id: install_bb
         continue-on-error: true
         uses: addnab/docker-run-action@v3
         with:
@@ -193,20 +204,24 @@ jobs:
             ls -lah
             sleep 30
             
-            if [ ${{matrix.flavor}} = "rke2" ]; then
+            FILE=$(realpath ${{matrix.flavor}}.kubeconfig)
+            export KUBECONFIG=$FILE
+
+            kubectl version 
+
+            # if [ ${{matrix.flavor}} = "rke2" ]; then
               #KV_NAME=${1:-$(terraform output -raw kv_name)}
               #source ../scripts/fetch-kubeconfig.sh
               #ls -la rke2.kubeconfig
-              
-              FILE=$(realpath rke2.kubeconfig)
-              export KUBECONFIG=$FILE
-              
-              kubectl version
-              
-            else
+              #   FILE=$(realpath rke2.kubeconfig)
+              #   export KUBECONFIG=$FILE              
+              #   kubectl version              
+            # else
               #az aks get-credentials -g $(terraform output -raw rg_name) -n $(terraform output -raw aks_cluster_name)
-              kubectl version 
-            fi
+              #   FILE=$(realpath ${{matrix.flavor}}.kubeconfig)
+              #   export KUBECONFIG=$FILE
+              #   kubectl version 
+            # fi
             
       - name: Hello
         run: |
