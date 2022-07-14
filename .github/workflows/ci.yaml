@@ -156,6 +156,11 @@ jobs:
 
               kubectl version 
             fi
+
+            cd /PyBuilder
+            tar cvf /transfer/${{ matrix.flavor }}-${{ matrix.cloud }}.tar working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
+            ls -lah /PyBuilder/*.tar
+            
             
       - name: Upload terraform env
         uses: actions/upload-artifact@v3
