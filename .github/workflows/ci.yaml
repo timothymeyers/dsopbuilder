@@ -135,6 +135,7 @@ jobs:
               #source ../scripts/fetch-kubeconfig.sh
               ls -la rke2.kubeconfig
               kubectl version
+              
   
             else
               # If AKS, need kubelogin for interactive
