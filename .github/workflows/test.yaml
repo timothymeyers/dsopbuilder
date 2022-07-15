@@ -34,4 +34,4 @@ jobs:
     container: dsopbuilder:ci
     steps:
       - run: |
-        ls -lah
+          ls -lah
