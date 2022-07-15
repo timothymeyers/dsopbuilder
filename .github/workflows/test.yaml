@@ -142,7 +142,7 @@ jobs:
             kubectl version
 
             echo "::set-output name=kvname::"${1:-$(terraform output -raw kv_name)}
-            echo "::set-output name=clustername::"${1:-$(terraform output -raw rke2_cluster.name)}
+            echo "::set-output name=clustername::"${1:-$(terraform output -raw name)}
             echo "::set-output name=rgname::"${1:-$(terraform output -raw rg_name)}
             
   deploy-bigbang:
@@ -235,7 +235,7 @@ jobs:
       fail-fast: false
       matrix:
         cloud:  ['gov', 'commercial']
-        flavor: ['rke2', 'aks']
+        flavor: ['rke2']
     steps:
       - name: Login to Azure Gov
         uses: Azure/login@v1
