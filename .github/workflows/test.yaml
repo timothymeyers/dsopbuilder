@@ -25,6 +25,12 @@ jobs:
   use-container:
     runs-on: ubuntu-latest
     needs: build-container
+    strategy:
+      fail-fast: false
+      matrix:
+        cloud:  ['government', 'commercial']
+        flavor: ['aks']
+
     steps:
       - uses: docker/setup-buildx-action@v2
       - uses: actions/download-artifact@v3
@@ -36,7 +42,8 @@ jobs:
           docker load --input /tmp/dsopbuilder-ci.tar
           docker image ls -a     
       
-      - name: Set up container env
+      - name: Set up container env (Government)
+        if: matrix.cloud == 'government'
         run: |
           mkdir -p env-tmp
 
@@ -44,13 +51,53 @@ jobs:
           ${{ secrets.RKE2_GOV_CONFIG }}
           EOF
 
+          cat << EOF >  env-tmp/config-aks.json
+          ${{ secrets.AKS_GOV_CONFIG }}
+          EOF
+
+          echo "ARM_TENANT_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .tenantId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_CLIENT_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_CLIENT_SECRET="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_SUBSCRIPTION_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .subscriptionId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_ENVIRONMENT=usgovernment >> env-tmp/vars.env
+
+          echo "AAD_SERVICE_PRINCIPAL_CLIENT_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
+          echo "AAD_SERVICE_PRINCIPAL_CLIENT_SECRET="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
+
           echo "TIM_TEST=tim_test" >> env-tmp/vars.env
           echo "TIM_TEST_2=tim_test" >> env-tmp/vars.env
 
           ls -la env-tmp
-      - run: |
-          ls env-tmp
-      
+
+      - name: Set up container env (Commercial)
+        if: matrix.cloud == 'commercial'
+        run: |
+          mkdir -p env-tmp
+
+          cat << EOF >  env-tmp/config-rke2.json
+          ${{ secrets.RKE2_PUB_CONFIG }}
+          EOF
+
+          cat << EOF >  env-tmp/config-aks.json
+          ${{ secrets.AKS_PUB_CONFIG }}
+          EOF
+
+          echo "ARM_TENANT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .tenantId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_CLIENT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_CLIENT_SECRET="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_SUBSCRIPTION_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .subscriptionId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_ENVIRONMENT=azurecloud >> env-tmp/vars.env
+
+          echo "AAD_SERVICE_PRINCIPAL_CLIENT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
+          echo "AAD_SERVICE_PRINCIPAL_CLIENT_SECRET="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
+
+          echo "TIM_TEST=tim_test" >> env-tmp/vars.env
+          echo "TIM_TEST_2=tim_test" >> env-tmp/vars.env
+
+          ls -la env-tmp
+
+
+
       - uses: kohlerdominik/docker-run-action@v1
         with:
           image: dsopbuilder:ci
@@ -69,5 +116,8 @@ jobs:
             env | grep TIM
 
             echo "$TIM_TEST is fun"
+            echo "$ARM_ENVIRONMENT is the cloud"
+
+            az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"
 
             echo "Hello World"
