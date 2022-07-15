@@ -23,4 +23,6 @@ jobs:
             echo $TIM_TEST_2
             echo ""
             echo $GITHUB_ENV
+            echo "--"
+            echo ${{ env.TIM_TEST_2 }}
             
