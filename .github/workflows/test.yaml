@@ -22,7 +22,7 @@ jobs:
           name: dsopbuilder
           path: /tmp/dsopbuilder-ci.tar
       
-  use-container:
+  deploy-k8s:
     runs-on: ubuntu-latest
     needs: build-container
     strategy:
@@ -30,6 +30,10 @@ jobs:
       matrix:
         cloud:  ['government', 'commercial']
         flavor: ['aks']
+    outputs:
+      kvname: ${{ steps.deploy_k8s.outputs.kvname }}
+      clustername: ${{ steps.deploy_k8s.outputs.clustername }}
+      rgname: ${{ steps.deploy_k8s.outputs.rgname }}
 
     steps:
       - uses: docker/setup-buildx-action@v2
@@ -37,10 +41,7 @@ jobs:
         with:
           name: dsopbuilder
           path: /tmp
-      - name: Load image
-        run: |
-          docker load --input /tmp/dsopbuilder-ci.tar
-          docker image ls -a     
+      - run: docker load --input /tmp/dsopbuilder-ci.tar
       
       - name: Set up container env (Government)
         if: matrix.cloud == 'government'
@@ -82,8 +83,6 @@ jobs:
           ${{ secrets.AKS_PUB_CONFIG }}
           EOF
 
-          
-
           echo "ARM_TENANT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .tenantId | tr -d '"') >> env-tmp/vars.env
           echo "ARM_CLIENT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
           echo "ARM_CLIENT_SECRET="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
@@ -98,25 +97,20 @@ jobs:
 
           ls -la env-tmp
 
-
-
       - uses: kohlerdominik/docker-run-action@v1
+        id: deploy_k8s
         with:
           image: dsopbuilder:ci
           shell: /bin/bash
           volumes: |
             ${{ github.workspace }}/env-tmp:/env
           run: |
-            ls -lah /env
-            
             set -o allexport
             source /env/vars.env
             set +o allexport
 
-            env | grep TIM
-
-            echo "$TIM_TEST is fun"
-            echo "$ARM_ENVIRONMENT is the cloud"
+            mv /env/config-rke2.json config/config-rke2.json
+            mv /env/config-aks.json  config/config-aks.json
 
             if [ ${{ matrix.cloud }} = "government" ]; then
               az cloud set --name AzureUSGovernment
@@ -124,4 +118,90 @@ jobs:
 
             az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"
 
-            echo "Hello World"
+            echo "Deploying ${{ matrix.flavor }} ..."
+
+            echo "::set-output name=kvname::kv_tim"
+            echo "::set-output name=clustername::cluster_tim"
+            echo "::set-output name=rgname::rg_tim"
+            
+  deploy-bigbang:
+      runs-on: ubuntu-latest
+      needs: deploy-k8s
+      strategy:
+        fail-fast: false
+        matrix:
+          cloud:  ['government', 'commercial']
+          flavor: ['aks']
+
+      steps:
+        - uses: docker/setup-buildx-action@v2
+        - uses: actions/download-artifact@v3
+          with:
+            name: dsopbuilder
+            path: /tmp
+        - run: docker load --input /tmp/dsopbuilder-ci.tar
+
+        - name: Set up Big Bang config
+          run: |
+            mkdir -p env-tmp
+
+            cat << EOF >  env-tmp/config-bigbang.json
+            ${{ secrets.BB_CONFIG }}
+            EOF
+            sed -i env-tmp/config-bigbang.json -e "s/__GH_BRANCH__/ci-bb-${{ matrix.flavor }}-${{ matrix.cloud }}-${{ github.run_number }}/g"                
+
+        - name: Set up container env (Government)
+          if: matrix.cloud == 'government'
+          run: |
+            echo "ARM_TENANT_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .tenantId | tr -d '"') >> env-tmp/vars.env
+            echo "ARM_CLIENT_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
+            echo "ARM_CLIENT_SECRET="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
+            echo "ARM_SUBSCRIPTION_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .subscriptionId | tr -d '"') >> env-tmp/vars.env
+            echo "ARM_ENVIRONMENT=usgovernment" >> env-tmp/vars.env
+
+            echo "AAD_SERVICE_PRINCIPAL_CLIENT_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
+            echo "AAD_SERVICE_PRINCIPAL_CLIENT_SECRET="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
+          
+        - name: Set up container env (Commercial)
+          if: matrix.cloud == 'commercial'
+          run: |
+            echo "ARM_TENANT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .tenantId | tr -d '"') >> env-tmp/vars.env
+            echo "ARM_CLIENT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
+            echo "ARM_CLIENT_SECRET="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
+            echo "ARM_SUBSCRIPTION_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .subscriptionId | tr -d '"') >> env-tmp/vars.env
+            echo "ARM_ENVIRONMENT=azurecloud" >> env-tmp/vars.env
+
+            echo "AAD_SERVICE_PRINCIPAL_CLIENT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
+            echo "AAD_SERVICE_PRINCIPAL_CLIENT_SECRET="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
+
+
+        - uses: kohlerdominik/docker-run-action@v1
+          id: deploy_bigbang
+          with:
+            image: dsopbuilder:ci
+            shell: /bin/bash
+            volumes: |
+              ${{ github.workspace }}/env-tmp:/env
+            environment: |
+              KVNAME=${{ needs.deploy-k8s.outputs.kvname }}
+              CLUSTERNAME=${{ needs.deploy-k8s.outputs.clustername }}            
+              RGNAME=${{ needs.deploy-k8s.outputs.rgname }}
+          run: |
+            set -o allexport
+            source /env/vars.env
+            set +o allexport
+
+            mv /env/config-bigbang.json config/config-bigbang.json
+
+            if [ ${{ matrix.cloud }} = "government" ]; then
+              az cloud set --name AzureUSGovernment
+            fi
+
+            az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"
+
+            echo "Deploying ${{ matrix.flavor }} ..."
+
+            echo $KVNAME
+            echo $CLUSTERNAME
+            echo $RGNAME
+            echo "wahoo!"
