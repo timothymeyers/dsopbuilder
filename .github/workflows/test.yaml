@@ -23,7 +23,15 @@ jobs:
       #  with:
       #    name: dsopbuilder
       #    path: /tmp/dsopbuilder-ci.tar
-      - uses: addnab/docker-run-action@v3
-        with:
-          image: dsopbuilder:ci
-          run: ls -lah
+      #- uses: addnab/docker-run-action@v3
+      #  with:
+      #    image: dsopbuilder:ci
+      #    run: ls -lah
+
+  use-container:
+    runs-on: ubuntu-latest
+    needs: build-container
+    container: dsopbuilder:ci
+    steps:
+      - run: |
+        ls -lah
