@@ -15,7 +15,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          tags: dsopbuilder:ci-$ {{ github.run_number }}
+          tags: dsopbuilder:ci
           push: false
           outputs: type=docker,dest=/tmp/dsopbuilder-ci-$ {{ github.run_number }}.tar
       - name: Upload artifact
@@ -25,5 +25,5 @@ jobs:
           path: /tmp/dsopbuilder-ci-$ {{ github.run_number }}.tar
       - uses: addnab/docker-run-action@v3
         with:
-          image: dsopbuilder:ci-$ {{ github.run_number }}
+          image: dsopbuilder:ci
           run: ls -lah
