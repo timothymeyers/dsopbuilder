@@ -2,7 +2,6 @@ name: Test
 
 on:
   workflow_dispatch:
-  push:
 
 jobs:
 
@@ -11,14 +10,14 @@ jobs:
     steps:
       - uses: addnab/docker-run-action@v3
         with:
-          image: ubuntu-latest
+          image: ubuntu:latest
           run: |
             echo "Hello World"
             export TIM_TEST="tim_test"
             echo "TIM_TEST_2=tim_test_2" >> GITHUB_ENV
       - uses: addnab/docker-run-action@v3
         with:
-          image: ubuntu-latest
+          image: ubuntu:latest
           run: |
             echo $TIM_TEST
             echo ""
