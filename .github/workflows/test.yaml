@@ -108,9 +108,7 @@ jobs:
             ${{ github.workspace }}/env-tmp:/env
           run: |
             ls -lah /env
-            cat /env/config-rke2.json
-            cat /env/vars.env
-
+            
             set -o allexport
             source /env/vars.env
             set +o allexport
@@ -119,6 +117,10 @@ jobs:
 
             echo "$TIM_TEST is fun"
             echo "$ARM_ENVIRONMENT is the cloud"
+
+            if [ ${{ matrix.cloud }} = "government" ]; then
+              az cloud set --name AzureUSGovernment
+            fi
 
             az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"
 
