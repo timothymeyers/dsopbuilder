@@ -4,25 +4,26 @@ on: [workflow_dispatch, push]
 
 jobs:
 
-  build:
+  build-container:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build and export
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          tags: dsopbuilder:ci-$ {{ github.run_number }}
+          push: false
+          outputs: type=docker,dest=/tmp/dsopbuilder-ci-$ {{ github.run_number }}.tar
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: dsopbuilder
+          path: /tmp/dsopbuilder-ci-$ {{ github.run_number }}.tar
       - uses: addnab/docker-run-action@v3
         with:
-          image: ubuntu:latest
-          run: |
-            echo "Hello World"
-            export TIM_TEST="tim_test"
-            echo "TIM_TEST_2=tim_test_2" >> GITHUB_ENV
-      - uses: addnab/docker-run-action@v3
-        with:
-          image: ubuntu:latest
-          run: |
-            echo $TIM_TEST
-            echo ""
-            echo $TIM_TEST_2
-            echo ""
-            echo $GITHUB_ENV
-            echo "--"
-            echo ${{ env.TIM_TEST_2 }}
-            
+          image: dsopbuilder:ci-$ {{ github.run_number }}
+          run: ls -lah
