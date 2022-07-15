@@ -186,22 +186,22 @@ jobs:
               KVNAME=${{ needs.deploy-k8s.outputs.kvname }}
               CLUSTERNAME=${{ needs.deploy-k8s.outputs.clustername }}            
               RGNAME=${{ needs.deploy-k8s.outputs.rgname }}
-          run: |
-            set -o allexport
-            source /env/vars.env
-            set +o allexport
+            run: |
+              set -o allexport
+              source /env/vars.env
+              set +o allexport
 
-            mv /env/config-bigbang.json config/config-bigbang.json
+              mv /env/config-bigbang.json config/config-bigbang.json
 
-            if [ ${{ matrix.cloud }} = "government" ]; then
-              az cloud set --name AzureUSGovernment
-            fi
+              if [ ${{ matrix.cloud }} = "government" ]; then
+                az cloud set --name AzureUSGovernment
+              fi
 
-            az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"
+              az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"
 
-            echo "Deploying ${{ matrix.flavor }} ..."
+              echo "Deploying ${{ matrix.flavor }} ..."
 
-            echo $KVNAME
-            echo $CLUSTERNAME
-            echo $RGNAME
-            echo "wahoo!"
+              echo $KVNAME
+              echo $CLUSTERNAME
+              echo $RGNAME
+              echo "wahoo!"
