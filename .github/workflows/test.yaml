@@ -47,13 +47,15 @@ jobs:
           echo "TIM_TEST=tim_test" >> env-tmp/env.sh
 
           ls -la env-tmp
+      - run: |
+          ls env-tmp
       
       - uses: kohlerdominik/docker-run-action@v1
         with:
           image: dsopbuilder:ci
           shell: /bin/bash
           volumes: |
-            env-tmp:/env
+            ${{ github.workspace }}/env-tmp:/env
           run: |
             ls -lah /env
             cat /env/config-rke2.json
