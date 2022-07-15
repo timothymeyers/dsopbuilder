@@ -29,7 +29,7 @@ jobs:
       fail-fast: false
       matrix:
         cloud:  ['government', 'commercial']
-        flavor: ['aks']
+        flavor: ['rke2']
     outputs:
       kvname: ${{ steps.deploy_k8s.outputs.kvname }}
       clustername: ${{ steps.deploy_k8s.outputs.clustername }}
@@ -120,7 +120,21 @@ jobs:
 
             echo "Deploying ${{ matrix.flavor }} ..."
 
-            echo "::set-output name=kvname::kv_tim"
+            python3 main.py ${{ matrix.flavor }} apply --project ${{ github.run_number }} < <(yes)
+
+            cd /PyBuilder/working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
+            source ../scripts/fetch-kubeconfig.sh
+
+            until kubectl version &> /dev/null
+            do
+              echo "Waiting for k8s server to respond..."
+              sleep 10
+              source ../scripts/fetch-kubeconfig.sh
+            done
+
+            kubectl version
+
+            echo "::set-output name=kvname::"${1:-$(terraform output -raw kv_name)}
             echo "::set-output name=clustername::cluster_tim"
             echo "::set-output name=rgname::rg_tim"
             
@@ -131,7 +145,7 @@ jobs:
         fail-fast: false
         matrix:
           cloud:  ['government', 'commercial']
-          flavor: ['aks']
+          flavor: ['rke2']
 
       steps:
         - uses: docker/setup-buildx-action@v2
