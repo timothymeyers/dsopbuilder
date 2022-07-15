@@ -9,21 +9,8 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v3
-      #-
-      #  name: Set up Docker Buildx
-      #  uses: docker/setup-buildx-action@v2
-      #-
-      #  name: Build and export
-      #  uses: docker/build-push-action@v3
-      #  with:
-      #    context: .
-      #    push: false
-      #    platforms: linux/arm_64
-      #    tags: dsopbuilder:build-${{ github.run_number }}
-      #    outputs: type=docker,dest=/tmp/dsopbuilder.tar
       - name: Build and export
         run: |
           apt-get update && apt-get install gnupg curl
@@ -33,8 +20,7 @@ jobs:
           
           ls -lah .
           
-      -
-        name: Upload container as artifact
+      - name: Upload container as artifact
         uses: actions/upload-artifact@v3
         with:
           name: dsopbuilder
@@ -53,14 +39,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      -
-        name: Download container
+      - name: Download container
         uses: actions/download-artifact@v3
         with:
           name: dsopbuilder
           path: /tmp
-      -
-        name: Load image
+      - name: Load image
         run: |
           docker load --input /tmp/dsopbuilder.tar
           docker image ls -a
@@ -158,8 +142,8 @@ jobs:
             fi
 
             cd /PyBuilder
-            tar cvf /transfer/${{ matrix.flavor }}-${{ matrix.cloud }}.tar working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
-            ls -lah /PyBuilder/*.tar
+            tar cvf ${{ matrix.flavor }}-${{ matrix.cloud }}.tar working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
+            ls -lah *.tar
 
             
       - name: Upload terraform env
@@ -229,11 +213,9 @@ jobs:
             kubectl version 
 
             cd /PyBuilder
-            sed -i config/config-bigbang.json -e "s/__GH_USER__/${{ secrets.GH_USER }}/g"     
-            sed -i config/config-bigbang.json -e "s/__GH_PAT__/${{ secrets.GH_PAT }}/g"     
-            sed -i config/config-bigbang.json -e "s/__IB_USER__/${{ secrets.IB_USER }}/g"     
-            sed -i config/config-bigbang.json -e "s/__IB_PAT__/${{ secrets.IB_PAT }}/g"     
-            sed -i config/config-bigbang.json -e "s/__GH_REPO__/${{ secrets.BB_REPO }}/g"     
+            cat << EOF >  config/config-bigbang.json
+            ${{ secrets.BB_CONFIG }}
+            EOF   
             sed -i config/config-bigbang.json -e "s/__GH_BRANCH__/ci-bb-${{ matrix.flavor }}-${{ matrix.cloud }}-${{ github.run_number }}/g"     
             
             python3 main.py bb deploy
