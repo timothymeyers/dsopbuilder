@@ -112,6 +112,11 @@ jobs:
             mv /env/config-rke2.json config/config-rke2.json
             mv /env/config-aks.json  config/config-aks.json
 
+            # Install AMD64 terraform to make GH Action Runner happy
+            wget -q https://releases.hashicorp.com/terraform/1.1.7/terraform_1.1.7_linux_amd64.zip
+            unzip terraform*.zip
+            mv terraform /usr/local/bin
+
             if [ ${{ matrix.cloud }} = "government" ]; then
               az cloud set --name AzureUSGovernment
             fi
