@@ -17,7 +17,7 @@ jobs:
           context: .
           tags: dsopbuilder:ci
           push: false
-          outputs: type=docker,dest=/tmp/dsopbuilder-ci.tar
+      #    outputs: type=docker,dest=/tmp/dsopbuilder-ci.tar
       #- name: Upload artifact
       #  uses: actions/upload-artifact@v3
       #  with:
