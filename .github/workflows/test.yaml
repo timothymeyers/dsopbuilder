@@ -63,7 +63,7 @@ jobs:
             cat /env/vars.env
 
             set -o allexport
-            source /env/env.sh
+            source /env/vars.env
             set +o allexport
 
             env | grep TIM
