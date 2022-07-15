@@ -44,7 +44,8 @@ jobs:
           ${{ secrets.RKE2_GOV_CONFIG }}
           EOF
 
-          echo "TIM_TEST=tim_test" >> env-tmp/env.sh
+          echo "TIM_TEST=tim_test" >> env-tmp/vars.env
+          echo "TIM_TEST_2=tim_test" >> env-tmp/vars.env
 
           ls -la env-tmp
       - run: |
@@ -59,8 +60,14 @@ jobs:
           run: |
             ls -lah /env
             cat /env/config-rke2.json
-            cat /env/env.sh
+            cat /env/vars.env
 
+            set -o allexport
             source /env/env.sh
+            set +o allexport
 
             env | grep TIM
+
+            echo "$TIM_TEST is fun"
+
+            echo "Hello World"
