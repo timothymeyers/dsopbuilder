@@ -28,8 +28,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cloud:  ['government', 'commercial']
         flavor: ['rke2']
+        cloud:  ['government', 'commercial']        
     outputs:
       kvname: ${{ steps.deploy_k8s.outputs.kvname }}
       clustername: ${{ steps.deploy_k8s.outputs.clustername }}
@@ -87,7 +87,7 @@ jobs:
           echo "ARM_CLIENT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
           echo "ARM_CLIENT_SECRET="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
           echo "ARM_SUBSCRIPTION_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .subscriptionId | tr -d '"') >> env-tmp/vars.env
-          echo "ARM_ENVIRONMENT=azurecloud" >> env-tmp/vars.env
+          #echo "ARM_ENVIRONMENT=azurecloud" >> env-tmp/vars.env
 
           echo "AAD_SERVICE_PRINCIPAL_CLIENT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
           echo "AAD_SERVICE_PRINCIPAL_CLIENT_SECRET="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
@@ -97,7 +97,8 @@ jobs:
 
           ls -la env-tmp
 
-      - uses: kohlerdominik/docker-run-action@v1
+      - name: Deploy Kubernetes
+        uses: kohlerdominik/docker-run-action@v1
         id: deploy_k8s
         with:
           image: dsopbuilder:ci
@@ -135,13 +136,14 @@ jobs:
               echo "Waiting for k8s server to respond..."
               sleep 10
               source ../scripts/fetch-kubeconfig.sh
+              ls -lah *.kubeconfig
             done
 
             kubectl version
 
             echo "::set-output name=kvname::"${1:-$(terraform output -raw kv_name)}
-            echo "::set-output name=clustername::cluster_tim"
-            echo "::set-output name=rgname::rg_tim"
+            echo "::set-output name=clustername::"${1:-$(terraform output -raw rke2_cluster.name)}"
+            echo "::set-output name=rgname::"${1:-$(terraform output -raw rg_name)}
             
   deploy-bigbang:
       runs-on: ubuntu-latest
@@ -224,3 +226,31 @@ jobs:
               echo $CLUSTERNAME
               echo $RGNAME
               echo "wahoo!"
+
+
+  clean-up:
+    runs-on: ubuntu-22.04
+    needs: [deploy-bigbang]
+    strategy:
+      fail-fast: false
+      matrix:
+        cloud:  ['gov', 'commercial']
+        flavor: ['rke2', 'aks']
+    steps:
+      - name: Login to Azure Gov
+        uses: Azure/login@v1
+        if: matrix.cloud == 'gov'
+        with:
+          creds: ${{ secrets.AZURE_GOV_CREDENTIALS }}
+          environment: azureusgovernment
+      
+      - name: Login to Azure Commercial
+        uses: Azure/login@v1
+        if: matrix.cloud == 'commercial'
+        with:
+          creds: ${{ secrets.AZURE_PUB_CREDENTIALS }}
+      
+      - name: Clean-up
+        run: |
+          az group delete --name dsop-${{ matrix.flavor }}-ci-rg --yes
+          az group list -o table
