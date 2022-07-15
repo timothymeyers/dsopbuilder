@@ -17,12 +17,12 @@ jobs:
           context: .
           tags: dsopbuilder:ci
           push: false
-          outputs: type=docker,dest=/tmp/dsopbuilder-ci-$ {{ github.run_number }}.tar
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: dsopbuilder
-          path: /tmp/dsopbuilder-ci-$ {{ github.run_number }}.tar
+      #    outputs: type=docker,dest=/tmp/dsopbuilder-ci.tar
+      #- name: Upload artifact
+      #  uses: actions/upload-artifact@v3
+      #  with:
+      #    name: dsopbuilder
+      #    path: /tmp/dsopbuilder-ci.tar
       - uses: addnab/docker-run-action@v3
         with:
           image: dsopbuilder:ci
