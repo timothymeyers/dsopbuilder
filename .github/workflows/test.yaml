@@ -59,7 +59,7 @@ jobs:
           echo "ARM_CLIENT_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
           echo "ARM_CLIENT_SECRET="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
           echo "ARM_SUBSCRIPTION_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .subscriptionId | tr -d '"') >> env-tmp/vars.env
-          echo "ARM_ENVIRONMENT=usgovernment >> env-tmp/vars.env
+          echo "ARM_ENVIRONMENT=usgovernment" >> env-tmp/vars.env
 
           echo "AAD_SERVICE_PRINCIPAL_CLIENT_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
           echo "AAD_SERVICE_PRINCIPAL_CLIENT_SECRET="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
@@ -82,11 +82,13 @@ jobs:
           ${{ secrets.AKS_PUB_CONFIG }}
           EOF
 
+          
+
           echo "ARM_TENANT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .tenantId | tr -d '"') >> env-tmp/vars.env
           echo "ARM_CLIENT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
           echo "ARM_CLIENT_SECRET="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
           echo "ARM_SUBSCRIPTION_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .subscriptionId | tr -d '"') >> env-tmp/vars.env
-          echo "ARM_ENVIRONMENT=azurecloud >> env-tmp/vars.env
+          echo "ARM_ENVIRONMENT=azurecloud" >> env-tmp/vars.env
 
           echo "AAD_SERVICE_PRINCIPAL_CLIENT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
           echo "AAD_SERVICE_PRINCIPAL_CLIENT_SECRET="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
