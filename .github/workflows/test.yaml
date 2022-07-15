@@ -1,0 +1,27 @@
+name: Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: addnab/docker-run-action@v3
+        with:
+          image: ubuntu-latest
+          run: |
+            echo "Hello World"
+            export TIM_TEST="tim_test"
+            echo "TIM_TEST_2=tim_test_2" >> GITHUB_ENV
+      - uses: addnab/docker-run-action@v3
+        with:
+          image: ubuntu-latest
+          run: |
+            echo $TIM_TEST
+            echo ""
+            echo $TIM_TEST_2
+            echo ""
+            echo $GITHUB_ENV
+            
