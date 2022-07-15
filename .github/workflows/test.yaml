@@ -35,7 +35,30 @@ jobs:
         run: |
           docker load --input /tmp/dsopbuilder-ci.tar
           docker image ls -a     
+      
+      - name: Set up container env
+        run: |
+          mkdir -p /env-tmp
+
+          cat << EOF >  /env-tmp/config-rke2.json
+          ${{ secrets.RKE2_GOV_CONFIG }}
+          EOF
+
+          echo "TIM_TEST=tim_test" >> /env-tmp/env.sh
+
+          ls -la /env-tmp
+      
       - uses: kohlerdominik/docker-run-action@v1
         with:
           image: dsopbuilder:ci
-          run: ls -lah
+          shell: /bin/bash
+          volumes: |
+            /env-tmp:/env
+          run: |
+            ls -lah /env
+            cat /env/config-rke2.json
+            cat /env/env.sh
+
+            source /env/env.sh
+
+            env | grep TIM
