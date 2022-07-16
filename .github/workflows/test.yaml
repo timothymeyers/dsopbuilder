@@ -141,9 +141,9 @@ jobs:
 
             kubectl version
 
-            echo "::set-output name=kvname::"${1:-$(terraform output -raw kv_name)}
-            echo "::set-output name=clustername::"${1:-$(terraform output -raw name)}
-            echo "::set-output name=rgname::"${1:-$(terraform output -raw rg_name)}
+            echo "::set-output name=kvname::"$(terraform output -raw kv_name)
+            echo "::set-output name=clustername::"$(terraform output -json rke2_cluster | jq .name | tr -d '"')
+            echo "::set-output name=rgname::"$(terraform output -raw rg_name)
             
   deploy-bigbang:
       runs-on: ubuntu-latest
@@ -226,6 +226,35 @@ jobs:
               echo $CLUSTERNAME
               echo $RGNAME
               echo "wahoo!"
+
+              FILE=$(realpath k8s.kubeconfig)
+              export KUBECONFIG=$FILE
+
+              if [ ${{ matrix.flavor }} = "rke2" ]; then
+                az keyvault secret show --name kubeconfig --vault-name $KVNAME -o json | jq -r '.value' > $FILE
+              else
+                # If AKS, need kubelogin for interactive
+
+                wget -q https://github.com/Azure/kubelogin/releases/download/v0.0.14/kubelogin-linux-amd64.zip
+                unzip kubelogin*.zip
+                mv bin/linux_amd64/kubelogin /usr/local/bin/kubelogin
+
+                az aks get-credentials -g $RGNAME -n $CLUSTERNAME
+                cp /root/.kube/config $FILE
+                ls -la FILE
+
+                kubelogin convert-kubeconfig -l spn
+              fi
+
+              until kubectl version &> /dev/null
+              do
+                echo "Waiting for k8s server to respond..."
+                sleep 5
+              done
+              
+              kubectl version
+
+
 
 
   clean-up:
