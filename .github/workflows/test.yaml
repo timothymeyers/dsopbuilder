@@ -156,123 +156,246 @@ jobs:
           path: ${{ github.workspace }}/env-tmp/cluster.env
             
   deploy-bigbang:
-      runs-on: ubuntu-latest
-      needs: deploy-k8s
-      strategy:
-        fail-fast: false
-        matrix:
-          cloud:  ['government', 'commercial']
-          flavor: ['rke2']
+    runs-on: ubuntu-latest
+    needs: deploy-k8s
+    strategy:
+      fail-fast: false
+      matrix:
+        cloud:  ['government', 'commercial']
+        flavor: ['rke2']
 
-      steps:
-        - uses: docker/setup-buildx-action@v2
-        - uses: actions/download-artifact@v3
-          with:
-            name: dsopbuilder
-            path: /tmp
+    steps:
+      - uses: docker/setup-buildx-action@v2
+      - uses: actions/download-artifact@v3
+        with:
+          name: dsopbuilder
+          path: /tmp
 
-        - run: docker load --input /tmp/dsopbuilder-ci.tar
+      - run: docker load --input /tmp/dsopbuilder-ci.tar
+      
+      - uses: actions/download-artifact@v3
+        with:
+          name: cluster_env_${{ matrix.flavor }}_${{ matrix.cloud}}
+          path: env-tmp
+
+      - name: Set up Big Bang config
+        run: |
+          mkdir -p env-tmp
+
+          cat << EOF >  env-tmp/config-bigbang.json
+          ${{ secrets.BB_CONFIG }}
+          EOF
+          sed -i env-tmp/config-bigbang.json -e "s/__GH_BRANCH__/ci-bb-${{ matrix.flavor }}-${{ matrix.cloud }}-${{ github.run_number }}/g"                
+
+      - name: Set up container env (Government)
+        if: matrix.cloud == 'government'
+        run: |
+          echo "ARM_TENANT_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .tenantId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_CLIENT_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_CLIENT_SECRET="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_SUBSCRIPTION_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .subscriptionId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_ENVIRONMENT=usgovernment" >> env-tmp/vars.env
+
+          echo "AAD_SERVICE_PRINCIPAL_CLIENT_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
+          echo "AAD_SERVICE_PRINCIPAL_CLIENT_SECRET="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
         
-        - uses: actions/download-artifact@v3
-          with:
-            name: cluster_env_${{ matrix.flavor }}_${{ matrix.cloud}}
-            path: env-tmp
+      - name: Set up container env (Commercial)
+        if: matrix.cloud == 'commercial'
+        run: |
+          echo "ARM_TENANT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .tenantId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_CLIENT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_CLIENT_SECRET="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_SUBSCRIPTION_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .subscriptionId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_ENVIRONMENT=azurecloud" >> env-tmp/vars.env
 
-        - name: Set up Big Bang config
+          echo "AAD_SERVICE_PRINCIPAL_CLIENT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
+          echo "AAD_SERVICE_PRINCIPAL_CLIENT_SECRET="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
+
+
+      - name: Deploy Big Bang
+        uses: kohlerdominik/docker-run-action@v1
+        id: deploy_bigbang
+        with:
+          image: dsopbuilder:ci
+          shell: /bin/bash
+          volumes: |
+            ${{ github.workspace }}/env-tmp:/env
           run: |
-            mkdir -p env-tmp
+            set -o allexport
+            source /env/vars.env
+            source /env/cluster.env
+            set +o allexport
 
-            cat << EOF >  env-tmp/config-bigbang.json
-            ${{ secrets.BB_CONFIG }}
-            EOF
-            sed -i env-tmp/config-bigbang.json -e "s/__GH_BRANCH__/ci-bb-${{ matrix.flavor }}-${{ matrix.cloud }}-${{ github.run_number }}/g"                
+            mv /env/config-bigbang.json config/config-bigbang.json
 
-        - name: Set up container env (Government)
-          if: matrix.cloud == 'government'
+            if [ ${{ matrix.cloud }} = "government" ]; then
+              az cloud set --name AzureUSGovernment
+            fi
+
+            az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"
+
+            echo "Deploying ${{ matrix.flavor }} ..."
+
+            echo $KVNAME
+            echo $CLUSTERNAME
+            echo $RGNAME
+            echo "wahoo!"
+
+            FILE=$(realpath k8s.kubeconfig)
+            export KUBECONFIG=$FILE
+
+            if [ ${{ matrix.flavor }} = "rke2" ]; then
+              az keyvault secret show --name kubeconfig --vault-name $KVNAME -o json | jq -r '.value' > $FILE
+            else
+              # If AKS, need kubelogin for interactive
+
+              wget -q https://github.com/Azure/kubelogin/releases/download/v0.0.14/kubelogin-linux-amd64.zip
+              unzip kubelogin*.zip
+              mv bin/linux_amd64/kubelogin /usr/local/bin/kubelogin
+
+              az aks get-credentials -g $RGNAME -n $CLUSTERNAME
+              cp /root/.kube/config $FILE
+              ls -la FILE
+
+              kubelogin convert-kubeconfig -l spn
+            fi
+
+            until kubectl version &> /dev/null
+            do
+              echo "Waiting for k8s server to respond..."
+              sleep 5
+            done
+            
+            kubectl version
+            python3 main.py bb deploy
+
+
+  verify-bigbang:
+    runs-on: ubuntu-latest
+    needs: [deploy-k8s, deploy-bigbang]
+    strategy:
+      fail-fast: false
+      matrix:
+        cloud:  ['government', 'commercial']
+        flavor: ['rke2']
+
+    steps:
+      - uses: docker/setup-buildx-action@v2
+      - uses: actions/download-artifact@v3
+        with:
+          name: dsopbuilder
+          path: /tmp
+
+      - run: docker load --input /tmp/dsopbuilder-ci.tar
+      
+      - uses: actions/download-artifact@v3
+        with:
+          name: cluster_env_${{ matrix.flavor }}_${{ matrix.cloud}}
+          path: env-tmp
+
+      - name: Set up Big Bang config
+        run: |
+          mkdir -p env-tmp
+
+          cat << EOF >  env-tmp/config-bigbang.json
+          ${{ secrets.BB_CONFIG }}
+          EOF
+          sed -i env-tmp/config-bigbang.json -e "s/__GH_BRANCH__/ci-bb-${{ matrix.flavor }}-${{ matrix.cloud }}-${{ github.run_number }}/g"                
+
+      - name: Set up container env (Government)
+        if: matrix.cloud == 'government'
+        run: |
+          echo "ARM_TENANT_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .tenantId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_CLIENT_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_CLIENT_SECRET="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_SUBSCRIPTION_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .subscriptionId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_ENVIRONMENT=usgovernment" >> env-tmp/vars.env
+
+          echo "AAD_SERVICE_PRINCIPAL_CLIENT_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
+          echo "AAD_SERVICE_PRINCIPAL_CLIENT_SECRET="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
+        
+      - name: Set up container env (Commercial)
+        if: matrix.cloud == 'commercial'
+        run: |
+          echo "ARM_TENANT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .tenantId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_CLIENT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_CLIENT_SECRET="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_SUBSCRIPTION_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .subscriptionId | tr -d '"') >> env-tmp/vars.env
+          echo "ARM_ENVIRONMENT=azurecloud" >> env-tmp/vars.env
+
+          echo "AAD_SERVICE_PRINCIPAL_CLIENT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
+          echo "AAD_SERVICE_PRINCIPAL_CLIENT_SECRET="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
+
+
+      - name: Verify Big Bang
+        uses: kohlerdominik/docker-run-action@v1
+        id: deploy_bigbang
+        with:
+          image: dsopbuilder:ci
+          shell: /bin/bash
+          volumes: |
+            ${{ github.workspace }}/env-tmp:/env
           run: |
-            echo "ARM_TENANT_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .tenantId | tr -d '"') >> env-tmp/vars.env
-            echo "ARM_CLIENT_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
-            echo "ARM_CLIENT_SECRET="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
-            echo "ARM_SUBSCRIPTION_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .subscriptionId | tr -d '"') >> env-tmp/vars.env
-            echo "ARM_ENVIRONMENT=usgovernment" >> env-tmp/vars.env
+            set -o allexport
+            source /env/vars.env
+            source /env/cluster.env
+            set +o allexport
 
-            echo "AAD_SERVICE_PRINCIPAL_CLIENT_ID="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
-            echo "AAD_SERVICE_PRINCIPAL_CLIENT_SECRET="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
-          
-        - name: Set up container env (Commercial)
-          if: matrix.cloud == 'commercial'
-          run: |
-            echo "ARM_TENANT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .tenantId | tr -d '"') >> env-tmp/vars.env
-            echo "ARM_CLIENT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
-            echo "ARM_CLIENT_SECRET="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
-            echo "ARM_SUBSCRIPTION_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .subscriptionId | tr -d '"') >> env-tmp/vars.env
-            echo "ARM_ENVIRONMENT=azurecloud" >> env-tmp/vars.env
+            mv /env/config-bigbang.json config/config-bigbang.json
 
-            echo "AAD_SERVICE_PRINCIPAL_CLIENT_ID="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
-            echo "AAD_SERVICE_PRINCIPAL_CLIENT_SECRET="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
+            if [ ${{ matrix.cloud }} = "government" ]; then
+              az cloud set --name AzureUSGovernment
+            fi
+
+            az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"
+
+            echo "Deploying ${{ matrix.flavor }} ..."
+
+            echo $KVNAME
+            echo $CLUSTERNAME
+            echo $RGNAME
+            echo "wahoo!"
+
+            FILE=$(realpath k8s.kubeconfig)
+            export KUBECONFIG=$FILE
+
+            if [ ${{ matrix.flavor }} = "rke2" ]; then
+              az keyvault secret show --name kubeconfig --vault-name $KVNAME -o json | jq -r '.value' > $FILE
+            else
+              # If AKS, need kubelogin for interactive
+
+              wget -q https://github.com/Azure/kubelogin/releases/download/v0.0.14/kubelogin-linux-amd64.zip
+              unzip kubelogin*.zip
+              mv bin/linux_amd64/kubelogin /usr/local/bin/kubelogin
+
+              az aks get-credentials -g $RGNAME -n $CLUSTERNAME
+              cp /root/.kube/config $FILE
+              ls -la FILE
+
+              kubelogin convert-kubeconfig -l spn
+            fi
+
+            until kubectl version &> /dev/null
+            do
+              echo "Waiting for k8s server to respond..."
+              sleep 5
+            done
+            
+            kubectl version
+
+            until python3 main.py bb verify | grep False
+            do
+              echo "Waiting for Big Bang to reconcile ..."
+              sleep 10
+            done
 
 
-        - uses: kohlerdominik/docker-run-action@v1
-          id: deploy_bigbang
-          with:
-            image: dsopbuilder:ci
-            shell: /bin/bash
-            volumes: |
-              ${{ github.workspace }}/env-tmp:/env
-            run: |
-              set -o allexport
-              source /env/vars.env
-              source /env/cluster.env
-              set +o allexport
-
-              mv /env/config-bigbang.json config/config-bigbang.json
-
-              if [ ${{ matrix.cloud }} = "government" ]; then
-                az cloud set --name AzureUSGovernment
-              fi
-
-              az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"
-
-              echo "Deploying ${{ matrix.flavor }} ..."
-
-              echo $KVNAME
-              echo $CLUSTERNAME
-              echo $RGNAME
-              echo "wahoo!"
-
-              FILE=$(realpath k8s.kubeconfig)
-              export KUBECONFIG=$FILE
-
-              if [ ${{ matrix.flavor }} = "rke2" ]; then
-                az keyvault secret show --name kubeconfig --vault-name $KVNAME -o json | jq -r '.value' > $FILE
-              else
-                # If AKS, need kubelogin for interactive
-
-                wget -q https://github.com/Azure/kubelogin/releases/download/v0.0.14/kubelogin-linux-amd64.zip
-                unzip kubelogin*.zip
-                mv bin/linux_amd64/kubelogin /usr/local/bin/kubelogin
-
-                az aks get-credentials -g $RGNAME -n $CLUSTERNAME
-                cp /root/.kube/config $FILE
-                ls -la FILE
-
-                kubelogin convert-kubeconfig -l spn
-              fi
-
-              until kubectl version &> /dev/null
-              do
-                echo "Waiting for k8s server to respond..."
-                sleep 5
-              done
               
-              kubectl version
-
-
 
 
   clean-up:
     runs-on: ubuntu-22.04
-    needs: [deploy-bigbang]
+    needs: [deploy-k8s, deploy-bigbang, verify-bigbang]
     strategy:
       fail-fast: false
       matrix:
