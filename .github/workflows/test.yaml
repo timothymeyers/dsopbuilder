@@ -383,7 +383,7 @@ jobs:
             
             kubectl version
 
-            until python3 main.py bb verify | grep False
+            until $(python3 main.py bb verify | grep False)
             do
               echo "Waiting for Big Bang to reconcile ..."
               sleep 10
