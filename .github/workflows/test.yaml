@@ -141,9 +141,19 @@ jobs:
 
             kubectl version
 
-            echo "::set-output name=kvname::"$(terraform output -raw kv_name)
-            echo "::set-output name=clustername::"$(terraform output -json rke2_cluster | jq .name | tr -d '"')
-            echo "::set-output name=rgname::"$(terraform output -raw rg_name)
+            #echo "::set-output name=kvname::"$(terraform output -raw kv_name)
+            #echo "::set-output name=clustername::"$(terraform output -json rke2_cluster | jq .name | tr -d '"')
+            #echo "::set-output name=rgname::"$(terraform output -raw rg_name)
+
+            echo KVNAME=$(terraform output -raw kv_name) >> /env/cluster.env
+            echo CLUSTERNAME=$(terraform output -json rke2_cluster | jq .name | tr -d '"') >> /env/cluster.env
+            echo RGNAME=$(terraform output -raw rg_name) >> /env/cluster.env
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: cluster_env_${{ matrix.flavor }}_${{ matrix.cloud}}
+          path: /env-tmp/cluster.env
             
   deploy-bigbang:
       runs-on: ubuntu-latest
@@ -160,7 +170,13 @@ jobs:
           with:
             name: dsopbuilder
             path: /tmp
+
         - run: docker load --input /tmp/dsopbuilder-ci.tar
+        
+        - uses: actions/download-artifact@v3
+          with:
+            name: cluster_env_${{ matrix.flavor }}_${{ matrix.cloud}}
+            path: env-tmp
 
         - name: Set up Big Bang config
           run: |
@@ -203,13 +219,10 @@ jobs:
             shell: /bin/bash
             volumes: |
               ${{ github.workspace }}/env-tmp:/env
-            environment: |
-              KVNAME=${{ needs.deploy-k8s.outputs.kvname }}
-              CLUSTERNAME=${{ needs.deploy-k8s.outputs.clustername }}            
-              RGNAME=${{ needs.deploy-k8s.outputs.rgname }}
             run: |
               set -o allexport
               source /env/vars.env
+              source /env/cluster.env
               set +o allexport
 
               mv /env/config-bigbang.json config/config-bigbang.json
