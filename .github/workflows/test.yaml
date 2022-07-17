@@ -383,11 +383,10 @@ jobs:
             
             kubectl version
 
-            for n in {1...20}
+            for n in {1..20}
             do
-              #if python3 main.py bb verify | grep 'False\|Unknown'; then break; fi              
-              echo a
-              python3 main.py bb verify | grep 'False\|Unknown'
+              python3 main.py bb verify | grep 'False\|Unknown' &> /dev/null
+              if [[ $? -eq 1 ]]; then break; fi
               echo "Waiting for Big Bang to reconcile ... (minute $n of 20)"
               sleep 60
             done
