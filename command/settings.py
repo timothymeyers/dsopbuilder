@@ -19,12 +19,19 @@ app_settings = None
 AZ_GET_CLOUD_LIST = "az cloud list -o json"
 AZ_STATUS = "az account show"
 @app.command()
-def list():
+def list(rke2:bool = typer.Option (False, help="Validate settings in config-rke2.json file", show_default=False),
+            aks:bool  = typer.Option (False, help="Validate settings in config-aks.json file", show_default=False),
+            bigbang: bool = typer.Option (False, help="Validate settings in config-bigbang.json file", show_default=False)):
     """
     Lists the current configuration settings (config.json)
     """
-    app_settings = AppSettings()
-    app_settings.print_settings_json()
+
+    if rke2: AppSettings('./config/config-rke2.json').print_settings_json()
+    if aks: AppSettings('./config/config-aks.json').print_settings_json()
+    if bigbang: AppSettings('./config/config-bigbang.json').print_settings_json()
+
+    if not (rke2 or aks or bigbang):
+        cout_error_and_exit ("Please run --help and specify a config file to validate.")
 
 @app.command()
 def validate(rke2:bool = typer.Option (False, help="Validate settings in config-rke2.json file", show_default=False),
