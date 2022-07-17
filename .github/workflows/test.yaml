@@ -390,6 +390,7 @@ jobs:
               echo "Waiting for Big Bang to reconcile ... (minute $n of 20)"
               python3 main.py bb verify
               sleep 60
+              ((n++))
               python3 main.py bb verify | grep False &> /dev/null
             done
 
