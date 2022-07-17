@@ -385,12 +385,14 @@ jobs:
 
             for n in {1...20}
             do
-              if python3 main.py bb verify | grep 'False\|Unknown'; then break; fi              
+              #if python3 main.py bb verify | grep 'False\|Unknown'; then break; fi              
+              echo a
+              python3 main.py bb verify | grep 'False\|Unknown'
               echo "Waiting for Big Bang to reconcile ... (minute $n of 20)"
               sleep 60
             done
 
-            if python3 main.py bb verify | grep 'False\|Unknown'; then exit 1; fi  
+            #if python3 main.py bb verify | grep 'False\|Unknown'; then exit 1; fi  
             python3 main.py bb verify
 
 
@@ -400,6 +402,7 @@ jobs:
   clean-up:
     runs-on: ubuntu-22.04
     needs: [deploy-k8s, deploy-bigbang, verify-bigbang]
+    if: ${{ always() }}
     strategy:
       fail-fast: false
       matrix:
