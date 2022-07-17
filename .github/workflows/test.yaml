@@ -383,13 +383,14 @@ jobs:
             
             kubectl version
 
-            
-            python3 main.py bb verify | grep False
-            until $? -ne 0
+            n=0
+            python3 main.py bb verify | grep False &> /dev/null
+            until [[ $? == 1 || $n -gt 20 ]]
             do
-              echo "Waiting for Big Bang to reconcile ..."
-              sleep 10
-              python3 main.py bb verify | grep False
+              echo "Waiting for Big Bang to reconcile ... (minute $n of 20)"
+              python3 main.py bb verify
+              sleep 60
+              python3 main.py bb verify | grep False &> /dev/null
             done
 
 
