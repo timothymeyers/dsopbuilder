@@ -384,14 +384,13 @@ jobs:
             kubectl version
 
             n=0
-            python3 main.py bb verify | grep 'False\|Unknown' &> /dev/null
+            python3 main.py bb verify | grep 'False\|Unknown'
             until [[ $? == 1 || $n -gt 20 ]]
             do
-              echo "Waiting for Big Bang to reconcile ... (minute $n of 20)"
-              python3 main.py bb verify
-              sleep 60
-              ((n++))
-              python3 main.py bb verify | grep 'False\|Unknown' &> /dev/null
+            echo "Waiting for Big Bang to reconcile ... (minute $n of 20)"  
+            sleep 60
+            ((n++))
+            python3 main.py bb verify | grep 'False\|Unknown'
             done
             python3 main.py bb verify
 
