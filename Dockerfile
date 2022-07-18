@@ -18,12 +18,12 @@ ENV KUBECTL_VER="v1.23.1"
 # https://jhooq.com/failed-to-get-the-data-key/
 ENV GPG_TTY="/dev/pts/0"
 
-RUN apt-get update && apt-get install -y curl gpg gnupg
+RUN apt-get update && apt-get install -y -q curl gpg gnupg
 
 # apt-get
 RUN curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y -q \
     python3.10 \
     zip \
     jq \
