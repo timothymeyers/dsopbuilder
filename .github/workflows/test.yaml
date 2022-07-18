@@ -385,7 +385,7 @@ jobs:
 
             for n in {1..60}
             do
-              python3 main.py bb verify | grep 'False\|Unknown' &> /dev/null
+              (python3 main.py bb verify | grep 'False\|Unknown' &> /dev/null && :)
               if [[ $? -eq 1 ]]; then break; fi
               echo "Waiting for Big Bang to reconcile ... (minute $n of 20)"
               sleep 60
