@@ -11,14 +11,14 @@ do
     echo "Waiting for Big Bang to reconcile ... (minute $n of 60)"
     
     
-    if [ $((n%3)) == "0" ]; then kubectl gitrepositories,get ks,hr -A; fi
+    if [ $((n%2)) == "0" ]; then kubectl get gitrepositories,ks,hr -A; fi
     
     echo "-----"
 
     sleep 60
 done
 
-kubectl gitrepositories,get ks,hr -A
+kubectl get gitrepositories,ks,hr -A
 
 out=$(kubectl get ks,hr -A | grep 'False\|Unknown' | cat)
 
