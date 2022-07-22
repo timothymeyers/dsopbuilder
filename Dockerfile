@@ -50,7 +50,7 @@ RUN curl -sL https://aka.ms/InstallAzureCLIDeb | sed 's/install -y azure-cli/ins
 
 # Terraform
 #RUN wget https://releases.hashicorp.com/terraform/1.1.7/terraform_1.1.7_linux_amd64.zip
-RUN wget https://releases.hashicorp.com/terraform/1.1.7/terraform_1.1.7_linux_arm64.zip
+RUN wget -q https://releases.hashicorp.com/terraform/1.1.7/terraform_1.1.7_linux_arm64.zip
 RUN unzip terraform*.zip
 RUN mv terraform /usr/local/bin
 
@@ -82,6 +82,12 @@ RUN set -ex \
 # Fixing KeyVault bug in AZ CLI (issue/13507)
 RUN pip3 uninstall azure-keyvault; \
     pip3 install azure-keyvault==1.1.0
+
+# Install kubelogin to support non-interactive AKS login
+RUN wget -q https://github.com/Azure/kubelogin/releases/download/v0.0.14/kubelogin-linux-amd64.zip
+RUN unzip kubelogin*.zip
+RUN mv bin/linux_amd64/kubelogin /usr/local/bin/kubelogin
+
 
 # PyBuilder
 COPY . /PyBuilder
