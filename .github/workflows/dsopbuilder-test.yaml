@@ -74,9 +74,9 @@ jobs:
       matrix:
         flavor: [rke2,aks]
         cloud:  [AzureUSGovernmentCloud, AzurePublicCloud]
-        location: [usgovvirginia, usgovarizona, eastus, eastus2]
+        location: [usgovvirginia, eastus2]
         vm_size: [Standard_D8_v3]
-        cluster_size: [4, 5]
+        cluster_size: [5]
         experimental: [true]
         include:
           - flavor: aks
@@ -105,9 +105,9 @@ jobs:
       matrix:
         flavor: [rke2,aks]
         cloud:  [AzureUSGovernmentCloud, AzurePublicCloud]
-        location: [usgovvirginia, usgovarizona, eastus, eastus2]
+        location: [usgovvirginia, eastus2]
         vm_size: [Standard_D8_v3]
-        cluster_size: [4, 5]
+        cluster_size: [5]
         experimental: [true]
         include:
           - flavor: aks
@@ -138,7 +138,7 @@ jobs:
       matrix:
         flavor: [rke2,aks]
         cloud:  [AzureUSGovernmentCloud, AzurePublicCloud]
-        location: [usgovvirginia, eastus]
+        location: [usgovvirginia, eastus2]
         vm_size: [Standard_D8_v3]
         cluster_size: [5]
         experimental: [true]
