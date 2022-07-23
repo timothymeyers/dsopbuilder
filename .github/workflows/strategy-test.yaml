@@ -28,7 +28,8 @@ jobs:
         include:
           - flavor: aks
             version: 1.22.6
-          - vm_size: Standard_D4_v2
+          - flavor: rke2
+            vm_size: Standard_D4_v2
             experimental: false
 
     
