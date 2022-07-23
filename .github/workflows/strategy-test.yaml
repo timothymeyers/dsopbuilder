@@ -17,8 +17,6 @@ jobs:
         cluster_size: [4, 5]
         experimental: [true]
         include:
-          - vm_size: Standard_D4_v2
-            experimental: false
           - flavor: aks
             version: 1.22.6
         exclude:
