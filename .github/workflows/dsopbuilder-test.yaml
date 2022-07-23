@@ -51,14 +51,16 @@ jobs:
         run: echo 
       - name: Load container
         run: echo
-      - name: Setup container env (Government)
-        run: echo
-      - name: Setup container env (Commercial)
-        run: echo
+      - name: Prep for (Commercial)
+        run: echo Save AZURE_PUB_CREDENTIALS to an env variable
+      - name: Prep for (Government)
+        run: echo Save AZURE_GOV_CREDENTIALS to an env variable and set ARM_ENVIRONMENT
+      - name: Setup container credentials
+        run: echo set all credentials one time using that env variable
       - name: Setup cluster config (rke2)
-        run: echo
+        run: echo copy ci-config-rke2.json to env-tmp/config.json
       - name: Setup cluster config (aks)
-        run: echo
+        run: echo copy ci-config-rke2.json to env-tmp/config.json AND set the AAD_GROUP var
       - name: Deploy Kubernetes
         run: echo
       - name: Upload cluster.env
