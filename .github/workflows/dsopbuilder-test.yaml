@@ -1,0 +1,50 @@
+name: DSOPBuilder Test
+
+on: [workflow_dispatch, push]
+
+jobs:
+  
+  build-container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Buildx
+      - name: Build and export container
+      - name: Upload container
+
+  deploy-k8s:
+    runs-on: ubuntu-latest
+    needs: build-container
+
+    steps:
+      - name: Setup Buildx
+      - name: Download container
+      - name: Load container
+      - name: Setup container env (Government)
+      - name: Setup container env (Commercial)
+      - name: Setup cluster config (rke2)
+      - name: Setup cluster config (aks)
+      - name: Deploy Kubernetes
+      - name: Upload cluster.env
+
+  deploy-bigbang:
+    runs-on: ubuntu-latest
+    needs: [build-container, deploy-k8s]
+
+    steps:
+      - name: Hello
+
+  verify-bigbang:
+    runs-on: ubuntu-latest
+    needs: [build-container, deploy-k8s, deploy-bigbang]
+
+    steps:
+      - name: Hello
+
+  clean-up:
+      runs-on: ubuntu-22.04
+      needs: [build-container, deploy-k8s, deploy-bigbang, verify-bigbang]
+      if: ${{ always() }}
+
+      steps:
+        - name: Hello
