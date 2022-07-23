@@ -17,9 +17,13 @@ jobs:
         experimental: [false]
         include:
           - cloud: AzureUSGovernmentCloud
-            location: [usgovvirginia, usgovarizona]
+            location: usgovvirginia
+          - cloud: AzureUSGovernmentCloud
+            location: usgovarizona
           - cloud: AzurePublicCloud
-            location: [eastus, eastus2, westus, westus2]
+            location: eastus
+          - cloud: AzurePublicCloud
+            location: eastus2
           - flavor: aks
             version: 1.22.6
 
