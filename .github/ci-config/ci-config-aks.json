@@ -1,0 +1,29 @@
+{
+    "general": {
+        "cluster_name": "dsop-aks",
+        "cloud": "__K8_CLOUD__",
+        "location": "__K8_LOCATION__",
+        "kubernetes_version": "__K8_VERSION__"
+    },
+    "cluster-size": {
+        "server_instance_count": 1,
+        "agent_instance_count": __K8_AGENT_COUNT__,
+        "vm_size": "__K8_VM_SIZE__"
+    },
+    "connectivity": {
+        "server_public_ip": "true",
+        "server_open_ssh_public": "true"
+    },
+    "custom_vnet_settings" : {
+        "vnet_customize": 0,
+        "use_external_vnet": 0,
+        "external_vnet_resource_group" : "aks_rg",
+        "external_vnet_name" : "aks-vnet",
+        "external_vnet_subnet_name" : "aks-subnet"
+    },
+    "custom_aad_settings_for_aks" : {
+        "aad_group_ids" : ["__AKS_AAD_GROUP_ID__"]
+    },
+    "clone_dsop_repo_name": "dsop_aks"
+  }
+  
