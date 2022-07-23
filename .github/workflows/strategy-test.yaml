@@ -12,18 +12,20 @@ jobs:
       matrix:
         flavor: [rke2,aks]
         cloud:  [AzureUSGovernmentCloud, AzurePublicCloud]
+        location: [usgovvirginia, usgovarizona, eastus, eastus2]
         vm_size: [Standard_D8_v3]
         cluster_size: [4, 5]
         experimental: [false]
-        include:
+        exclude:
           - cloud: AzureUSGovernmentCloud
-            location: usgovvirginia
-          - cloud: AzureUSGovernmentCloud
-            location: usgovarizona
-          - cloud: AzurePublicCloud
             location: eastus
-          - cloud: AzurePublicCloud
+          - cloud: AzureUSGovernmentCloud
             location: eastus2
+          - cloud: AzurePublicCloud
+            location: usgovvirginia
+          - cloud: AzurePublicCloud
+            location: usgovarizona
+        include:
           - flavor: aks
             version: 1.22.6
 
