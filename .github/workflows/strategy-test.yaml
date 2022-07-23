@@ -15,7 +15,7 @@ jobs:
         location: [usgovvirginia, usgovarizona, eastus, eastus2]
         vm_size: [Standard_D8_v3]
         cluster_size: [4, 5]
-        experimental: [false]
+        experimental: [true]
         exclude:
           - cloud: AzureUSGovernmentCloud
             location: eastus
@@ -28,6 +28,8 @@ jobs:
         include:
           - flavor: aks
             version: 1.22.6
+          - vm_size: Standard_D4_v2
+            experimental: false
 
     
     steps:
