@@ -5,6 +5,7 @@ on: [workflow_dispatch, push]
 jobs:
   
   build-container:
+    name: Build the DSOPBuilder Container Image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -16,6 +17,7 @@ jobs:
         run: echo
 
   deploy-k8s:
+    name: Deploy Kubernetes
     runs-on: ubuntu-latest
     needs: build-container
 
@@ -40,6 +42,7 @@ jobs:
         run: echo
 
   deploy-bigbang:
+    name: Deploy Big Bang
     runs-on: ubuntu-latest
     needs: [build-container, deploy-k8s]
 
@@ -48,6 +51,7 @@ jobs:
         run: echo
 
   verify-bigbang:
+    name: Verify Big Bang
     runs-on: ubuntu-latest
     needs: [build-container, deploy-k8s, deploy-bigbang]
 
@@ -56,10 +60,11 @@ jobs:
         run: echo
 
   clean-up:
-      runs-on: ubuntu-22.04
-      needs: [build-container, deploy-k8s, deploy-bigbang, verify-bigbang]
-      if: ${{ always() }}
+    name: Destroy all resourcs
+    runs-on: ubuntu-22.04
+    needs: [build-container, deploy-k8s, deploy-bigbang, verify-bigbang]
+    if: ${{ always() }}
 
-      steps:
-        - name: Hello
-          run: echo
+    steps:
+      - name: Hello
+        run: echo
