@@ -8,7 +8,7 @@ LABEL "version"="1.0.0b0"
 LABEL "email"="reuben@cleet.us"
 
 ENV BB_TEMPLATE_VERSION="1.12.0"
-ENV BB_VERSION="1.36.0"
+ENV BB_VERSION="1.37.0"
 
 ENV SOPS_VER="3.7.2"
 ENV KUSTOMIZE_VER="4.5.2"
