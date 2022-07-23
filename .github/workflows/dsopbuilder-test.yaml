@@ -57,10 +57,8 @@ jobs:
         run: echo Save AZURE_GOV_CREDENTIALS to an env variable and set ARM_ENVIRONMENT
       - name: Setup container credentials
         run: echo set all credentials one time using that env variable
-      - name: Setup cluster config (rke2)
-        run: echo copy ci-config-rke2.json to env-tmp/config.json
-      - name: Setup cluster config (aks)
-        run: echo copy ci-config-rke2.json to env-tmp/config.json AND set the AAD_GROUP var
+      - name: Setup cluster config
+        run: echo copy ci-config-{flavor}}.json to env-tmp/config.json, set all values, AND set the AAD_GROUP var if aks
       - name: Deploy Kubernetes
         run: echo
       - name: Upload cluster.env
