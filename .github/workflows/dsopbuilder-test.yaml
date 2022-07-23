@@ -20,6 +20,29 @@ jobs:
     name: Deploy Kubernetes
     runs-on: ubuntu-latest
     needs: build-container
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor: [rke2,aks]
+        cloud:  [AzureUSGovernmentCloud, AzurePublicCloud]
+        location: [usgovvirginia, usgovarizona, eastus, eastus2]
+        vm_size: [Standard_D8_v3]
+        cluster_size: [4, 5]
+        experimental: [true]
+        include:
+          - flavor: aks
+            version: 1.22.6
+        exclude:
+          - cloud: AzureUSGovernmentCloud
+            location: eastus
+          - cloud: AzureUSGovernmentCloud
+            location: eastus2
+          - cloud: AzurePublicCloud
+            location: usgovvirginia
+          - cloud: AzurePublicCloud
+            location: usgovarizona
+
 
     steps:
       - name: Setup Buildx
@@ -45,6 +68,28 @@ jobs:
     name: Deploy Big Bang
     runs-on: ubuntu-latest
     needs: [build-container, deploy-k8s]
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor: [rke2,aks]
+        cloud:  [AzureUSGovernmentCloud, AzurePublicCloud]
+        location: [usgovvirginia, usgovarizona, eastus, eastus2]
+        vm_size: [Standard_D8_v3]
+        cluster_size: [4, 5]
+        experimental: [true]
+        include:
+          - flavor: aks
+            version: 1.22.6
+        exclude:
+          - cloud: AzureUSGovernmentCloud
+            location: eastus
+          - cloud: AzureUSGovernmentCloud
+            location: eastus2
+          - cloud: AzurePublicCloud
+            location: usgovvirginia
+          - cloud: AzurePublicCloud
+            location: usgovarizona
 
     steps:
       - name: Hello
@@ -54,6 +99,28 @@ jobs:
     name: Verify Big Bang
     runs-on: ubuntu-latest
     needs: [build-container, deploy-k8s, deploy-bigbang]
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor: [rke2,aks]
+        cloud:  [AzureUSGovernmentCloud, AzurePublicCloud]
+        location: [usgovvirginia, usgovarizona, eastus, eastus2]
+        vm_size: [Standard_D8_v3]
+        cluster_size: [4, 5]
+        experimental: [true]
+        include:
+          - flavor: aks
+            version: 1.22.6
+        exclude:
+          - cloud: AzureUSGovernmentCloud
+            location: eastus
+          - cloud: AzureUSGovernmentCloud
+            location: eastus2
+          - cloud: AzurePublicCloud
+            location: usgovvirginia
+          - cloud: AzurePublicCloud
+            location: usgovarizona
 
     steps:
       - name: Hello
@@ -64,6 +131,29 @@ jobs:
     runs-on: ubuntu-22.04
     needs: [build-container, deploy-k8s, deploy-bigbang, verify-bigbang]
     if: ${{ always() }}
+
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor: [rke2,aks]
+        cloud:  [AzureUSGovernmentCloud, AzurePublicCloud]
+        location: [usgovvirginia, usgovarizona, eastus, eastus2]
+        vm_size: [Standard_D8_v3]
+        cluster_size: [4, 5]
+        experimental: [true]
+        include:
+          - flavor: aks
+            version: 1.22.6
+        exclude:
+          - cloud: AzureUSGovernmentCloud
+            location: eastus
+          - cloud: AzureUSGovernmentCloud
+            location: eastus2
+          - cloud: AzurePublicCloud
+            location: usgovvirginia
+          - cloud: AzurePublicCloud
+            location: usgovarizona
 
     steps:
       - name: Hello
