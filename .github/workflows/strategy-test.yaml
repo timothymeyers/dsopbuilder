@@ -29,6 +29,13 @@ jobs:
 
     
     steps:
-      - run: echo "Hello" ${{ matrix }}
+      - run: |
+          echo "Hello"
+          echo ${{ matrix.flavor }}
+          echo ${{ matrix.cloud }}
+          echo ${{ matrix.vm_size }}
+          echo ${{ matrix.location }}
+          echo ${{ matrix.cluster_size }}
+          echo ${{ matrix.version }}
       
       
