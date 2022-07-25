@@ -60,13 +60,13 @@ jobs:
         if: matrix.cloud == 'AzurePublicCloud'
         run: |
           echo "AZURE_CREDENTIALS="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}') >> $GITHUB_ENV
-          echo "AKS_AAD_GROUP_ID=${{ serets.AKS_AAD_GROUP_ID_PUB }}" >> $GITHUB_ENV
+          echo "AKS_AAD_GROUP_ID=${{ secrets.AKS_AAD_GROUP_ID_PUB }}" >> $GITHUB_ENV
 
       - name: Set credentials to Government
         if: matrix.cloud == 'AzureUSGovernmentCloud'
         run: |         
           echo "AZURE_CREDENTIALS="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}') >> $GITHUB_ENV
-          echo "AKS_AAD_GROUP_ID=${{ serets.AKS_AAD_GROUP_ID_GOV }}" >> $GITHUB_ENV
+          echo "AKS_AAD_GROUP_ID=${{ secrets.AKS_AAD_GROUP_ID_GOV }}" >> $GITHUB_ENV
           echo "ARM_ENVIRONMENT=usgovernment" >> env-tmp/vars.env
 
       - name: Set credential environment vars for container
