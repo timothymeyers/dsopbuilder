@@ -217,10 +217,12 @@ jobs:
           FILE=$(realpath k8s.kubeconfig)
           mv /home/runner/.kube/config $FILE
 
-          export KUBECONFIG=$FILE
-          cat $KUBECONFIG
+          export KUBECONFIG=$FILE          
 
           kubelogin convert-kubeconfig -l spn
+          
+          export AAD_SERVICE_PRINCIPAL_CLIENT_ID=$AAD_SERVICE_PRINCIPAL_CLIENT_ID
+          export AAD_SERVICE_PRINCIPAL_CLIENT_SECRET=$AAD_SERVICE_PRINCIPAL_CLIENT_SECRET
 
           #until kubectl version &> /dev/null
           #do
@@ -228,7 +230,7 @@ jobs:
           #  sleep 5
           #done
 
-          kubectl version
+          kubectl version --short
           kubectl get nodes
 
 
