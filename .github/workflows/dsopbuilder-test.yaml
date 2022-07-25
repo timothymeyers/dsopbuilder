@@ -99,9 +99,9 @@ jobs:
 
           cp .github/ci-config/ci-config-${{ matrix.flavor }}.json env-tmp/config.json
 
-          rand=$( echo $(( $RANDOM % 1000 )) )
+          rand=$( echo $(( $RANDOM % 100 )) )
 
-          sed -i env-tmp/config.json -e "s/__K8_CLUSTER_NAME__/ci-dsop-${{ matrix.flavor }}-$rand/g"
+          sed -i env-tmp/config.json -e "s/__K8_CLUSTER_NAME__/ci-dsop-${{ matrix.flavor }}-${{ github.run_number }}$rand/g"
           sed -i env-tmp/config.json -e "s/__K8_CLOUD__/${{ matrix.cloud }}/g"
           sed -i env-tmp/config.json -e "s/__K8_LOCATION__/${{ matrix.location }}/g"
           sed -i env-tmp/config.json -e "s/__K8_AGENT_COUNT__/${{ matrix.cluster_size }}/g"
