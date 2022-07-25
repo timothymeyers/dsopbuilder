@@ -58,12 +58,15 @@ jobs:
 
       - name: Set credentials to Commercial
         if: matrix.cloud == 'AzurePublicCloud'
-        run: echo "AZURE_CREDENTIALS="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}') >> $GITHUB_ENV
+        run: |
+          echo "AZURE_CREDENTIALS="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}') >> $GITHUB_ENV
+          echo "AKS_AAD_GROUP_ID=${{ serets.AKS_AAD_GROUP_ID_PUB }}" >> $GITHUB_ENV
 
       - name: Set credentials to Government
         if: matrix.cloud == 'AzureUSGovernmentCloud'
         run: |         
           echo "AZURE_CREDENTIALS="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}') >> $GITHUB_ENV
+          echo "AKS_AAD_GROUP_ID=${{ serets.AKS_AAD_GROUP_ID_GOV }}" >> $GITHUB_ENV
           echo "ARM_ENVIRONMENT=usgovernment" >> env-tmp/vars.env
 
       - name: Set credential environment vars for container
@@ -80,12 +83,26 @@ jobs:
         run: |
           echo copy ci-config-{flavor}}.json to env-tmp/config.json, set all values, AND set the AAD_GROUP var if aks
 
+          cp .github/config/ci-config-${{ matrix.flavor }}.json env-tmp/config.json
+
+          sed -i env-tmp/config.json -e "s/__K8_CLOUD__/${{ matrix.cloud }} /g"
+          sed -i env-tmp/config.json -e "s/__K8_LOCATION__/${{ matrix.location }}/g"
+          sed -i env-tmp/config.json -e "s/__K8_AGENT_COUNT__/${{ matrix.cluster_size }}/g"
+          sed -i env-tmp/config.json -e "s/__K8_VM_SIZE__/${{ matrix.vm_size }}/g"
+
+      - name: Setup AKS config additions
+        if: matrix.flavor == 'aks'
+          sed -i env-tmp/config.json -e "s/__AKS_AAD_GROUP_ID__/${{ env.AKS_AAD_GROUP_ID }}/g"
+          sed -i env-tmp/config.json -e "s/__K8_VERSION__/${{ matrix.version }}/g"
+
       - name: Deploy Kubernetes
         run: |
-          echo
+          echo deploy kubernetes
+          echo env-tmp/config.json
+
       - name: Upload cluster.env
         run: |
-          echo
+          echo upload cluster.env
 
   deploy-bigbang:
     name: Deploy Big Bang
