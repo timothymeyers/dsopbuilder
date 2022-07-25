@@ -180,7 +180,11 @@ jobs:
           FILE=$(realpath k8s.kubeconfig)
           export KUBECONFIG=$FILE
 
-          az keyvault secret show --name kubeconfig --vault-name $KVNAME -o json | jq -r '.value' > $FILE
+          until az keyvault secret show --name kubeconfig --vault-name $KVNAME -o json | jq -r '.value' > $FILE
+          do
+            echo "Waiting for kubeconfig secret to appear..."
+            sleep 5
+          done
 
           until kubectl version &> /dev/null
           do
@@ -210,7 +214,7 @@ jobs:
           export KUBECONFIG=$FILE
 
           cp /home/runner/.kube/config $FILE
-          ls -la FILE
+          ls -la $FILE
 
           kubelogin convert-kubeconfig -l spn
 
@@ -226,7 +230,7 @@ jobs:
       - name: Upload cluster.env
         uses: actions/upload-artifact@v3
         with:
-          name: cluster_env_${{ matrix.flavor }}_${{ matrix.cloud}}_${{ matrix.location}}_${{ matrix.location}}__${{ matrix.vm_size}}__${{ matrix.cluster_size}}
+          name: cluster_env_${{ matrix.flavor }}_${{ matrix.cloud}}_${{ matrix.location}}_${{ matrix.vm_size}}_${{ matrix.cluster_size}}
           path: ${{ github.workspace }}/env-tmp/cluster.env
 
   deploy-bigbang:
