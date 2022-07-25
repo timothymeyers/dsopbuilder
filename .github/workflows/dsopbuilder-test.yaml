@@ -151,7 +151,7 @@ jobs:
               echo RGNAME=$(terraform output -raw rg_name) >> /env/cluster.env
             else
               #az aks get-credentials -g $(terraform output -raw rg_name) -n $(terraform output -raw aks_cluster_name)
-              echo CLUSTERNAME=$(terraform output -json aks_cluster_name | jq .name | tr -d '"') >> /env/cluster.env
+              echo CLUSTERNAME=$(terraform output -raw aks_cluster_name) >> /env/cluster.env
               echo RGNAME=$(terraform output -raw rg_name) >> /env/cluster.env
             fi
 
