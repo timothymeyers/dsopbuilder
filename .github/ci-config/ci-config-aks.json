@@ -1,6 +1,6 @@
 {
     "general": {
-        "cluster_name": "dsop-aks",
+        "cluster_name": "__K8_CLUSTER_NAME__",
         "cloud": "__K8_CLOUD__",
         "location": "__K8_LOCATION__",
         "kubernetes_version": "__K8_VERSION__"

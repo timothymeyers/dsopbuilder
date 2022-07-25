@@ -29,10 +29,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-container
     continue-on-error: ${{ matrix.experimental }}
-    outputs:
-      kvname: ${{ steps.deploy_k8s.outputs.kvname }}
-      clustername: ${{ steps.deploy_k8s.outputs.clustername }}
-      rgname: ${{ steps.deploy_k8s.outputs.rgname }}
     strategy:
       fail-fast: false
       matrix:
@@ -103,6 +99,9 @@ jobs:
 
           cp .github/ci-config/ci-config-${{ matrix.flavor }}.json env-tmp/config.json
 
+          rand=$( echo $(( $RANDOM % 1000 )) )
+
+          sed -i env-tmp/config.json -e "s/__K8_CLUSTER_NAME__/ci-dsop-${{ matrix.cloud }}-$rand/g"
           sed -i env-tmp/config.json -e "s/__K8_CLOUD__/${{ matrix.cloud }} /g"
           sed -i env-tmp/config.json -e "s/__K8_LOCATION__/${{ matrix.location }}/g"
           sed -i env-tmp/config.json -e "s/__K8_AGENT_COUNT__/${{ matrix.cluster_size }}/g"
@@ -140,10 +139,30 @@ jobs:
 
             az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"
 
+            python3 main.py ${{ matrix.flavor }} apply --project ${{ github.run_number }} < <(yes)
+            
+            cd /PyBuilder/working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
+            source ../scripts/fetch-kubeconfig.sh
+
+            until kubectl version &> /dev/null
+            do
+              echo "Waiting for k8s server to respond..."
+              sleep 10
+              source ../scripts/fetch-kubeconfig.sh
+              ls -lah *.kubeconfig
+            done
+
+            kubectl version
+
+            echo KVNAME=$(terraform output -raw kv_name) >> /env/cluster.env
+            echo CLUSTERNAME=$(terraform output -json rke2_cluster | jq .name | tr -d '"') >> /env/cluster.env
+            echo RGNAME=$(terraform output -raw rg_name) >> /env/cluster.env
 
       - name: Upload cluster.env
-        run: |
-          echo upload cluster.env
+        uses: actions/upload-artifact@v3
+        with:
+          name: cluster_env_${{ matrix.flavor }}_${{ matrix.cloud}}_${{ matrix.location}}_${{ matrix.location}}__${{ matrix.vm_size}}__${{ matrix.cluster_size}}
+          path: ${{ github.workspace }}/env-tmp/cluster.env
 
   deploy-bigbang:
     name: Deploy Big Bang
