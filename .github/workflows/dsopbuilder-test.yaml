@@ -141,7 +141,8 @@ jobs:
 
             python3 main.py ${{ matrix.flavor }} apply --project ${{ github.run_number }} < <(yes)
             
-            #cd /PyBuilder/working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
+            cd /PyBuilder/working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
+            
             #source ../scripts/fetch-kubeconfig.sh
 
             #until kubectl version &> /dev/null
@@ -154,9 +155,77 @@ jobs:
 
             #kubectl version
 
-            #echo KVNAME=$(terraform output -raw kv_name) >> /env/cluster.env
-            #echo CLUSTERNAME=$(terraform output -json rke2_cluster | jq .name | tr -d '"') >> /env/cluster.env
-            #echo RGNAME=$(terraform output -raw rg_name) >> /env/cluster.env
+            if [ ${{ matrix.flavor }} = "rke2" ]; then
+              echo KVNAME=$(terraform output -raw kv_name) >> /env/cluster.env
+              echo CLUSTERNAME=$(terraform output -json rke2_cluster | jq .name | tr -d '"') >> /env/cluster.env
+              echo RGNAME=$(terraform output -raw rg_name) >> /env/cluster.env
+            else
+              #az aks get-credentials -g $(terraform output -raw rg_name) -n $(terraform output -raw aks_cluster_name)
+              echo CLUSTERNAME=$(terraform output -json aks_cluster_name | jq .name | tr -d '"') >> /env/cluster.env
+              echo RGNAME=$(terraform output -raw rg_name) >> /env/cluster.env
+            fi
+
+      - name: Login (commercial)
+        if: matrix.cloud == 'AzurePublicCloud'
+        uses: Azure/login@v1
+        with:
+          creds: ${{ env.AZURE_CREDENTIALS }}
+
+      - name: Login (gov)
+        if: matrix.cloud == 'AzureUSGovernmentCloud'
+        uses: Azure/login@v1
+        with:
+          creds: ${{ env.AZURE_CREDENTIALS }}
+          environment: 'AzureUSGovernment'
+
+      - name: Verify RKE2 is Up
+        if: matrix.flavor == 'rke2'
+        run: |
+          set -o allexport
+          source env-tmp/cluster.env
+          set +o allexport
+
+          FILE=$(realpath k8s.kubeconfig)
+          export KUBECONFIG=$FILE
+
+          az keyvault secret show --name kubeconfig --vault-name $KVNAME -o json | jq -r '.value' > $FILE
+
+          until kubectl version &> /dev/null
+          do
+            echo "Waiting for k8s server to respond..."
+            sleep 5
+          done
+          
+          kubectl version
+
+      - name: Verify AKS is Up
+        if: matrix.flavor == 'aks'
+        run: |
+          set -o allexport
+          source env-tmp/cluster.env
+          set +o allexport
+
+          wget -q https://github.com/Azure/kubelogin/releases/download/v0.0.14/kubelogin-linux-amd64.zip
+          unzip kubelogin*.zip
+          mv bin/linux_amd64/kubelogin /usr/local/bin/kubelogin
+
+          FILE=$(realpath k8s.kubeconfig)
+          export KUBECONFIG=$FILE
+
+          az aks get-credentials -g $RGNAME -n $CLUSTERNAME
+          cp ${{ github.workspace }}/.kube/config $FILE
+          ls -la FILE
+
+          kubelogin convert-kubeconfig -l spn
+
+          until kubectl version &> /dev/null
+          do
+            echo "Waiting for k8s server to respond..."
+            sleep 5
+          done
+
+          kubectl version
+
 
       - name: Upload cluster.env
         uses: actions/upload-artifact@v3
