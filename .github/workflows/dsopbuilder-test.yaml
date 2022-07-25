@@ -57,13 +57,13 @@ jobs:
           touch env-tmp/vars.env
 
       - name: Prep for (Commercial)
-        if: matrix.cloud = AzurePublicCloud
+        if: matrix.cloud == 'AzurePublicCloud'
         run: |        
           echo Save AZURE_PUB_CREDENTIALS to an env variable
           echo "AZURE_CREDENTIALS=${{ secrets.AZURE_PUB_CREDENTIALS }}" >> $GITHUB_ENV
           echo "TIM_TEST=commercial" >> $GITHUB_ENV
       - name: Prep for (Government)
-        if: matrix.cloud = AzureUSGovernmentCloud
+        if: matrix.cloud == 'AzureUSGovernmentCloud'
         run: |         
           echo Save AZURE_GOV_CREDENTIALS to an env variable and set ARM_ENVIRONMENT
           echo "AZURE_CREDENTIALS=${{ secrets.AZURE_GOV_CREDENTIALS }}" >> $GITHUB_ENV
