@@ -68,7 +68,6 @@ jobs:
 
       - name: Set credential environment vars for container
         run: |
-          echo set all credentials one time using that env variable
           echo "ARM_TENANT_ID="$(echo '${{ env.AZURE_CREDENTIALS }}' | jq .tenantId | tr -d '"') >> env-tmp/vars.env
           echo "ARM_CLIENT_ID="$(echo '${{ env.AZURE_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
           echo "ARM_CLIENT_SECRET="$(echo '${{ env.AZURE_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
