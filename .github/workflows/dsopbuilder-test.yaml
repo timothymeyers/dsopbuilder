@@ -44,8 +44,7 @@ jobs:
             location: usgovarizona
 
 
-    steps:
-      - uses: actions/checkout@v3
+    steps:      
       - name: Setup Buildx
         run: echo
       - name: Download container
@@ -84,7 +83,9 @@ jobs:
         run: |
           echo copy ci-config-{flavor}}.json to env-tmp/config.json, set all values, AND set the AAD_GROUP var if aks
 
-          cp .github/config/ci-config-${{ matrix.flavor }}.json env-tmp/config.json
+          ls -lah
+
+          cp .github/ci-config/ci-config-${{ matrix.flavor }}.json env-tmp/config.json
 
           sed -i env-tmp/config.json -e "s/__K8_CLOUD__/${{ matrix.cloud }} /g"
           sed -i env-tmp/config.json -e "s/__K8_LOCATION__/${{ matrix.location }}/g"
