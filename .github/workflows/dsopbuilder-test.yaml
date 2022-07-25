@@ -196,6 +196,9 @@ jobs:
 
       - name: Verify AKS is Up
         if: matrix.flavor == 'aks'
+        env:
+          AAD_SERVICE_PRINCIPAL_CLIENT_ID: ${{ env.AAD_SERVICE_PRINCIPAL_CLIENT_ID }}
+          AAD_SERVICE_PRINCIPAL_CLIENT_SECRET: ${{ env.AAD_SERVICE_PRINCIPAL_CLIENT_SECRET }}
         run: |
           set -o allexport
           source env-tmp/cluster.env
@@ -213,7 +216,7 @@ jobs:
           FILE=$(realpath k8s.kubeconfig)
           export KUBECONFIG=$FILE
 
-          cp /home/runner/.kube/config $FILE
+          mv /home/runner/.kube/config $FILE
           ls -la $FILE
 
           kubelogin convert-kubeconfig -l spn
