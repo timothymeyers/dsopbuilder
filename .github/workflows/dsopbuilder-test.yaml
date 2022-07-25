@@ -56,35 +56,17 @@ jobs:
           mkdir -p env-tmp
           touch env-tmp/vars.env
 
-      - name: Prep for (Commercial)
+      - name: Set credentials to Commercial
         if: matrix.cloud == 'AzurePublicCloud'
-        run: |        
-          echo Save AZURE_PUB_CREDENTIALS to an env variable
-          echo "AZURE_CREDENTIALS="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}') >> $GITHUB_ENV
+        run: echo "AZURE_CREDENTIALS="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}') >> $GITHUB_ENV
 
-      - name: Prep for (Government)
+      - name: Set credentials to Government
         if: matrix.cloud == 'AzureUSGovernmentCloud'
         run: |         
-          echo Save AZURE_GOV_CREDENTIALS to an env variable and set ARM_ENVIRONMENT in vars.env
           echo "AZURE_CREDENTIALS="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}') >> $GITHUB_ENV
           echo "ARM_ENVIRONMENT=usgovernment" >> env-tmp/vars.env
 
-
-      - name: Login test (commercial)
-        if: matrix.cloud == 'AzurePublicCloud'
-        uses: Azure/login@v1
-        with:
-          creds: ${{ env. AZURE_CREDENTIALS }}
-
-      - name: Login test (gov)
-        if: matrix.cloud == 'AzureUSGovernmentCloud'
-        uses: Azure/login@v1
-        with:
-          creds: ${{ env. AZURE_CREDENTIALS }}
-          environment: 'AzureUSGovernment'
-
-
-      - name: Setup container credentials        
+      - name: Set credential environment vars for container
         run: |
           echo set all credentials one time using that env variable
           echo "ARM_TENANT_ID="$(echo '${{ env.AZURE_CREDENTIALS }}' | jq .tenantId | tr -d '"') >> env-tmp/vars.env
