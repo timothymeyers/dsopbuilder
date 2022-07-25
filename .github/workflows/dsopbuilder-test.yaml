@@ -61,7 +61,6 @@ jobs:
         run: |        
           echo Save AZURE_PUB_CREDENTIALS to an env variable
           echo "AZURE_CREDENTIALS="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}') >> $GITHUB_ENV
-          echo "TIM_TEST=commercial" >> $GITHUB_ENV
 
       - name: Prep for (Government)
         if: matrix.cloud == 'AzureUSGovernmentCloud'
@@ -70,8 +69,21 @@ jobs:
           echo "AZURE_CREDENTIALS="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}') >> $GITHUB_ENV
           echo "ARM_ENVIRONMENT=usgovernment" >> env-tmp/vars.env
 
-          echo "TIM_TEST=government" >> $GITHUB_ENV
-          
+
+      - name: Login test (commercial)
+        if: matrix.cloud == 'AzurePublicCloud'
+        uses: Azure/login@v1
+        with:
+          creds: ${{ env. AZURE_CREDENTIALS }}
+
+      - name: Login test (gov)
+        if: matrix.cloud == 'AzureUSGovernmentCloud'
+        uses: Azure/login@v1
+        with:
+          creds: ${{ env. AZURE_CREDENTIALS }}
+          environment: 'AzureUSGovernment'
+
+
       - name: Setup container credentials        
         run: |
           echo set all credentials one time using that env variable
@@ -83,17 +95,9 @@ jobs:
           echo "AAD_SERVICE_PRINCIPAL_CLIENT_ID="$(echo '${{ env.AZURE_CREDENTIALS }}' | jq .clientId | tr -d '"') >> env-tmp/vars.env
           echo "AAD_SERVICE_PRINCIPAL_CLIENT_SECRET="$(echo '${{ env.AZURE_CREDENTIALS }}' | jq .clientSecret | tr -d '"') >> env-tmp/vars.env
 
-          echo "TIM_TEST=${{ env.TIM_TEST }}" >> env-tmp/vars.env
-
       - name: Setup cluster config
         run: |
           echo copy ci-config-{flavor}}.json to env-tmp/config.json, set all values, AND set the AAD_GROUP var if aks
-
-          set -o allexport
-          source env-tmp/vars.env
-          set +o allexport
-
-          env | grep TIM_TEST
 
       - name: Deploy Kubernetes
         run: |
