@@ -60,13 +60,13 @@ jobs:
         if: matrix.cloud == 'AzurePublicCloud'
         run: |        
           echo Save AZURE_PUB_CREDENTIALS to an env variable
-          echo "action_state=yellow" >> $GITHUB_ENV
-
-
+          echo "AZURE_CREDENTIALS="$(echo '${{ secrets.AZURE_PUB_CREDENTIALS }}') >> $GITHUB_ENV
       - name: Prep for (Government)
         if: matrix.cloud == 'AzureUSGovernmentCloud'
         run: |         
-          echo Save AZURE_GOV_CREDENTIALS to an env variable and set ARM_ENVIRONMENT
+          echo Save AZURE_GOV_CREDENTIALS to an env variable and set ARM_ENVIRONMENT in vars.env
+          echo "AZURE_CREDENTIALS="$(echo '${{ secrets.AZURE_GOV_CREDENTIALS }}') >> $GITHUB_ENV
+          echo "ARM_ENVIRONMENT=usgovernment" >> env-tmp/vars.env
           
       - name: Setup container credentials        
         run: |
