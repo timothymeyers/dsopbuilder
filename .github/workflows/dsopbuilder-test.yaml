@@ -101,7 +101,7 @@ jobs:
 
           rand=$( echo $(( $RANDOM % 1000 )) )
 
-          sed -i env-tmp/config.json -e "s/__K8_CLUSTER_NAME__/ci-dsop-${{ matrix.cloud }}-$rand/g"
+          sed -i env-tmp/config.json -e "s/__K8_CLUSTER_NAME__/ci-dsop-${{ matrix.flavor }}-$rand/g"
           sed -i env-tmp/config.json -e "s/__K8_CLOUD__/${{ matrix.cloud }} /g"
           sed -i env-tmp/config.json -e "s/__K8_LOCATION__/${{ matrix.location }}/g"
           sed -i env-tmp/config.json -e "s/__K8_AGENT_COUNT__/${{ matrix.cluster_size }}/g"
