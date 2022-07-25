@@ -155,6 +155,7 @@ jobs:
               echo RGNAME=$(terraform output -raw rg_name) >> /env/cluster.env
             fi
 
+            sleep 60 # give time for the clusters to start up
             cat /env/cluster.env
 
       - name: Login (commercial)
