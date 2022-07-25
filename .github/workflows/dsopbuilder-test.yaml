@@ -102,7 +102,7 @@ jobs:
           rand=$( echo $(( $RANDOM % 1000 )) )
 
           sed -i env-tmp/config.json -e "s/__K8_CLUSTER_NAME__/ci-dsop-${{ matrix.flavor }}-$rand/g"
-          sed -i env-tmp/config.json -e "s/__K8_CLOUD__/${{ matrix.cloud }} /g"
+          sed -i env-tmp/config.json -e "s/__K8_CLOUD__/${{ matrix.cloud }}/g"
           sed -i env-tmp/config.json -e "s/__K8_LOCATION__/${{ matrix.location }}/g"
           sed -i env-tmp/config.json -e "s/__K8_AGENT_COUNT__/${{ matrix.cluster_size }}/g"
           sed -i env-tmp/config.json -e "s/__K8_VM_SIZE__/${{ matrix.vm_size }}/g"
@@ -141,22 +141,22 @@ jobs:
 
             python3 main.py ${{ matrix.flavor }} apply --project ${{ github.run_number }} < <(yes)
             
-            cd /PyBuilder/working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
-            source ../scripts/fetch-kubeconfig.sh
+            #cd /PyBuilder/working/dsop_${{ matrix.flavor }}/${{ github.run_number }}
+            #source ../scripts/fetch-kubeconfig.sh
 
-            until kubectl version &> /dev/null
-            do
-              echo "Waiting for k8s server to respond..."
-              sleep 10
-              source ../scripts/fetch-kubeconfig.sh
-              ls -lah *.kubeconfig
-            done
+            #until kubectl version &> /dev/null
+            #do
+            #  echo "Waiting for k8s server to respond..."
+            #  sleep 10
+            #  source ../scripts/fetch-kubeconfig.sh
+            #  ls -lah *.kubeconfig
+            #done
 
-            kubectl version
+            #kubectl version
 
-            echo KVNAME=$(terraform output -raw kv_name) >> /env/cluster.env
-            echo CLUSTERNAME=$(terraform output -json rke2_cluster | jq .name | tr -d '"') >> /env/cluster.env
-            echo RGNAME=$(terraform output -raw rg_name) >> /env/cluster.env
+            #echo KVNAME=$(terraform output -raw kv_name) >> /env/cluster.env
+            #echo CLUSTERNAME=$(terraform output -json rke2_cluster | jq .name | tr -d '"') >> /env/cluster.env
+            #echo RGNAME=$(terraform output -raw rg_name) >> /env/cluster.env
 
       - name: Upload cluster.env
         uses: actions/upload-artifact@v3
