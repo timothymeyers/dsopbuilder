@@ -92,6 +92,7 @@ jobs:
 
       - name: Setup AKS config additions
         if: matrix.flavor == 'aks'
+        run: |
           sed -i env-tmp/config.json -e "s/__AKS_AAD_GROUP_ID__/${{ env.AKS_AAD_GROUP_ID }}/g"
           sed -i env-tmp/config.json -e "s/__K8_VERSION__/${{ matrix.version }}/g"
 
