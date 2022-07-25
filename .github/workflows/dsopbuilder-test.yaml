@@ -209,7 +209,7 @@ jobs:
           FILE=$(realpath k8s.kubeconfig)
           export KUBECONFIG=$FILE
 
-          cp ${{ github.workspace }}/.kube/config $FILE
+          cp /home/runner/.kube/config $FILE
           ls -la FILE
 
           kubelogin convert-kubeconfig -l spn
