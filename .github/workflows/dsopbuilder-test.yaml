@@ -36,7 +36,7 @@ jobs:
         cloud:  [AzureUSGovernmentCloud, AzurePublicCloud]
         location: [usgovvirginia, eastus2]
         vm_size: [Standard_D8_v3]
-        cluster_size: [5]
+        cluster_size: [1]
         experimental: [true]
         include:
           - flavor: aks
@@ -155,6 +155,8 @@ jobs:
               echo RGNAME=$(terraform output -raw rg_name) >> /env/cluster.env
             fi
 
+            cat /env/cluster.env
+
       - name: Login (commercial)
         if: matrix.cloud == 'AzurePublicCloud'
         uses: Azure/login@v1
@@ -198,6 +200,9 @@ jobs:
           wget -q https://github.com/Azure/kubelogin/releases/download/v0.0.14/kubelogin-linux-amd64.zip
           unzip kubelogin*.zip
           mv bin/linux_amd64/kubelogin /usr/local/bin/kubelogin
+
+          echo $CLUSTERNAME
+          echo $RGNAME
 
           az aks get-credentials --name $CLUSTERNAME --resource-group $RGNAME
 
