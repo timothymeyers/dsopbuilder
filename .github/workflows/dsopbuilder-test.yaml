@@ -214,20 +214,21 @@ jobs:
           az aks get-credentials --name $CLUSTERNAME --resource-group $RGNAME
 
           FILE=$(realpath k8s.kubeconfig)
-          export KUBECONFIG=$FILE
-
           mv /home/runner/.kube/config $FILE
-          ls -la $FILE
+
+          export KUBECONFIG=$FILE
+          cat $KUBECONFIG
 
           kubelogin convert-kubeconfig -l spn
 
-          until kubectl version &> /dev/null
-          do
-            echo "Waiting for k8s server to respond..."
-            sleep 5
-          done
+          #until kubectl version &> /dev/null
+          #do
+          #  echo "Waiting for k8s server to respond..."
+          #  sleep 5
+          #done
 
           kubectl version
+          kubectl get nodes
 
 
       - name: Upload cluster.env
