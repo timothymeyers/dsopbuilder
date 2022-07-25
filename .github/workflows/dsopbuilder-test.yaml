@@ -15,7 +15,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          tags: dsopbuilder:ci
+          tags: dsopbuilder:ci-${{ github.run_number }}
           push: false
           outputs: type=docker,dest=/tmp/dsopbuilder-ci.tar
       - name: Upload container
@@ -29,6 +29,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-container
     continue-on-error: ${{ matrix.experimental }}
+    outputs:
+      kvname: ${{ steps.deploy_k8s.outputs.kvname }}
+      clustername: ${{ steps.deploy_k8s.outputs.clustername }}
+      rgname: ${{ steps.deploy_k8s.outputs.rgname }}
     strategy:
       fail-fast: false
       matrix:
@@ -51,15 +55,18 @@ jobs:
           - cloud: AzurePublicCloud
             location: usgovarizona
 
-
     steps:      
       - uses: actions/checkout@v3
       - name: Setup Buildx
-        run: echo
+        uses: docker/setup-buildx-action@v2
       - name: Download container
-        run: echo 
+        uses: actions/download-artifact@v3
+        with:
+          name: dsopbuilder
+          path: /tmp
       - name: Load container
-        run: echo
+        run: docker load --input /tmp/dsopbuilder-ci.tar
+
       - name: Prep container env directory
         run: |
           mkdir -p env-tmp
@@ -108,9 +115,31 @@ jobs:
           sed -i env-tmp/config.json -e "s/__K8_VERSION__/${{ matrix.version }}/g"
 
       - name: Deploy Kubernetes
-        run: |
-          echo deploy kubernetes
-          echo env-tmp/config.json
+        uses: kohlerdominik/docker-run-action@v1
+        id: deploy_k8s
+        with:
+          image: dsopbuilder:ci-${{ github.run_number }}
+          shell: /bin/bash
+          volumes: |
+            ${{ github.workspace }}/env-tmp:/env
+          run: |
+            set -o allexport
+            source /env/vars.env
+            set +o allexport
+
+            mv /env/config.json config/config-${{ matrix.flavor }}.json
+
+            # Install AMD64 terraform to make GH Action Runner happy
+            wget -q https://releases.hashicorp.com/terraform/1.1.7/terraform_1.1.7_linux_amd64.zip
+            unzip terraform*.zip
+            mv terraform /usr/local/bin
+
+            if [ ${{ matrix.cloud }} = "AzureUSGovernmentCloud" ]; then
+              az cloud set --name AzureUSGovernment
+            fi
+
+            az login --service-principal -u "${ARM_CLIENT_ID}" -p "${ARM_CLIENT_SECRET}" --tenant "${ARM_TENANT_ID}"
+
 
       - name: Upload cluster.env
         run: |
