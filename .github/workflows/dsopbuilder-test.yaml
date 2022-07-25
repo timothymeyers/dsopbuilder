@@ -145,16 +145,6 @@ jobs:
             
             #source ../scripts/fetch-kubeconfig.sh
 
-            #until kubectl version &> /dev/null
-            #do
-            #  echo "Waiting for k8s server to respond..."
-            #  sleep 10
-            #  source ../scripts/fetch-kubeconfig.sh
-            #  ls -lah *.kubeconfig
-            #done
-
-            #kubectl version
-
             if [ ${{ matrix.flavor }} = "rke2" ]; then
               echo KVNAME=$(terraform output -raw kv_name) >> /env/cluster.env
               echo CLUSTERNAME=$(terraform output -json rke2_cluster | jq .name | tr -d '"') >> /env/cluster.env
@@ -209,10 +199,11 @@ jobs:
           unzip kubelogin*.zip
           mv bin/linux_amd64/kubelogin /usr/local/bin/kubelogin
 
+          az aks get-credentials --name $CLUSTERNAME --resource-group $RGNAME
+
           FILE=$(realpath k8s.kubeconfig)
           export KUBECONFIG=$FILE
 
-          az aks get-credentials -g $RGNAME -n $CLUSTERNAME
           cp ${{ github.workspace }}/.kube/config $FILE
           ls -la FILE
 
