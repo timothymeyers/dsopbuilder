@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        flavor: [rke2,aks]
+        flavor: [aks]
         cloud:  [AzureUSGovernmentCloud, AzurePublicCloud]
         location: [usgovvirginia, eastus]
         vm_size: [Standard_D8_v3]
@@ -213,17 +213,31 @@ jobs:
           echo $RGNAME
 
           az aks get-credentials --name $CLUSTERNAME --resource-group $RGNAME
+          
+          echo 1
           mv /home/runner/.kube/config ./k8s.kubeconfig
+          echo 2
 
           export KUBECONFIG=$(realpath ./k8s.kubeconfig)
+          echo 4
+          echo $KUBECONFIG
 
           which kubelogin
+          
+          echo 5
+          
           kubelogin --version
+          
+          echo 6
 
           kubelogin convert-kubeconfig -l spn
           
+          echo 7
+          
           export AAD_SERVICE_PRINCIPAL_CLIENT_ID
           export AAD_SERVICE_PRINCIPAL_CLIENT_SECRET
+          
+          echo 8
 
           #until kubectl version &> /dev/null
           #do
