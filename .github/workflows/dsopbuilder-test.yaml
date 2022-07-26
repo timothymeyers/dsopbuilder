@@ -201,6 +201,7 @@ jobs:
         run: |
           set -o allexport
           source env-tmp/cluster.env
+          source env-tmp/vars.env
           set +o allexport
 
           #kubelogin is in dockerfile now
@@ -221,8 +222,8 @@ jobs:
 
           kubelogin convert-kubeconfig -l spn
           
-          export AAD_SERVICE_PRINCIPAL_CLIENT_ID=${{ env.AAD_SERVICE_PRINCIPAL_CLIENT_ID }}
-          export AAD_SERVICE_PRINCIPAL_CLIENT_SECRET=${{ env.AAD_SERVICE_PRINCIPAL_CLIENT_SECRET }}
+          #export AAD_SERVICE_PRINCIPAL_CLIENT_ID=${{ env.AAD_SERVICE_PRINCIPAL_CLIENT_ID }}
+          #export AAD_SERVICE_PRINCIPAL_CLIENT_SECRET=${{ env.AAD_SERVICE_PRINCIPAL_CLIENT_SECRET }}
 
           #until kubectl version &> /dev/null
           #do
