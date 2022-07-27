@@ -222,7 +222,7 @@ jobs:
           echo 3
           echo $KUBECONFIG
 
-          which kubelogin
+          # which kubelogin
           
           echo 4
           
