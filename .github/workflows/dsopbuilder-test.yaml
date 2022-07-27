@@ -205,9 +205,9 @@ jobs:
           set +o allexport
 
           #kubelogin is in dockerfile now
-          #wget -q https://github.com/Azure/kubelogin/releases/download/v0.0.14/kubelogin-linux-amd64.zip
-          #unzip kubelogin*.zip
-          #mv bin/linux_amd64/kubelogin /usr/local/bin/kubelogin
+          wget -q https://github.com/Azure/kubelogin/releases/download/v0.0.14/kubelogin-linux-amd64.zip
+          unzip kubelogin*.zip
+          mv bin/linux_amd64/kubelogin /usr/local/bin/kubelogin
 
           echo $CLUSTERNAME
           echo $RGNAME
