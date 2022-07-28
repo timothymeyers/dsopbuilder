@@ -387,6 +387,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: cluster_env_${{ matrix.flavor }}_${{ matrix.cloud}}_${{ matrix.location}}_${{ matrix.vm_size}}_${{ matrix.cluster_size}}
+          path: env-tmp
+          
       - name: Login (commercial)
         if: matrix.cloud == 'AzurePublicCloud'
         uses: Azure/login@v1
