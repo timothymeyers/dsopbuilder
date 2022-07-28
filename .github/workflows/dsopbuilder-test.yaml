@@ -454,7 +454,7 @@ jobs:
     name: Destroy all resourcs
     runs-on: ubuntu-22.04
     needs: [build-container, deploy-k8s, deploy-bigbang, verify-bigbang]
-    if: ${{ matrix.clean_up && always() }}
+    # if: ${{ always() }}
 
     continue-on-error: ${{ matrix.experimental }}
     strategy:
@@ -466,7 +466,6 @@ jobs:
         vm_size: [Standard_D8_v3]
         cluster_size: [1]
         experimental: [true]
-        clean_up: [false]
         include:
           - flavor: aks
             version: 1.22.6
