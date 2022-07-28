@@ -86,7 +86,7 @@ RUN pip3 uninstall azure-keyvault; \
 # Install kubelogin to support non-interactive AKS login
 RUN wget -q https://github.com/Azure/kubelogin/releases/download/v0.0.14/kubelogin-linux-amd64.zip
 RUN unzip kubelogin*.zip
-RUN mv bin/linux_amd64/kubelogin /usr/local/bin/kubelogin
+RUN mv bin/linux_amd64/kubelogin /usr/local/bin
 
 
 # PyBuilder
