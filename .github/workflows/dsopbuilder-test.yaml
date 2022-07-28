@@ -366,11 +366,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        flavor: [rke2,aks]
+        flavor: [aks, rke2]
         cloud:  [AzureUSGovernmentCloud, AzurePublicCloud]
-        location: [usgovvirginia, eastus2]
+        location: [usgovarizona, eastus2]
         vm_size: [Standard_D8_v3]
-        cluster_size: [5]
+        cluster_size: [1]
         experimental: [true]
         include:
           - flavor: aks
@@ -386,8 +386,69 @@ jobs:
             location: usgovarizona
 
     steps:
-      - name: Hello
-        run: echo
+      - uses: actions/checkout@v3
+      - name: Login (commercial)
+        if: matrix.cloud == 'AzurePublicCloud'
+        uses: Azure/login@v1
+        with:
+          creds: ${{ env.AZURE_CREDENTIALS }}
+
+      - name: Login (gov)
+        if: matrix.cloud == 'AzureUSGovernmentCloud'
+        uses: Azure/login@v1
+        with:
+          creds: ${{ env.AZURE_CREDENTIALS }}
+          environment: 'AzureUSGovernment'
+
+      - name: Verify RKE2 is Up
+        if: matrix.flavor == 'rke2'
+        run: |
+          set -o allexport
+          source env-tmp/cluster.env
+          set +o allexport
+
+          FILE=$(realpath k8s.kubeconfig)
+          export KUBECONFIG=$FILE
+
+          until az keyvault secret show --name kubeconfig --vault-name $KVNAME -o json | jq -r '.value' > $FILE
+          do
+            echo "Waiting for kubeconfig secret to appear..."
+            sleep 5
+          done
+
+          until kubectl version &> /dev/null
+          do
+            echo "Waiting for k8s server to respond..."
+            sleep 5
+          done
+          
+          kubectl version
+
+      - name: Verify AKS is Up
+        if: matrix.flavor == 'aks'
+        run: |
+          set -o allexport
+          source env-tmp/cluster.env
+          source env-tmp/vars.env
+          set +o allexport
+
+          #kubelogin is in dockerfile now
+          wget -q https://github.com/Azure/kubelogin/releases/download/v0.0.14/kubelogin-linux-amd64.zip
+          unzip kubelogin*.zip
+          mv bin/linux_amd64/kubelogin /usr/local/bin/kubelogin
+
+          az aks get-credentials --name $CLUSTERNAME --resource-group $RGNAME
+          mv /home/runner/.kube/config ./k8s.kubeconfig
+          export KUBECONFIG=$(realpath ./k8s.kubeconfig)
+          
+          kubelogin --version
+          kubelogin convert-kubeconfig -l spn
+          export AAD_SERVICE_PRINCIPAL_CLIENT_ID
+          export AAD_SERVICE_PRINCIPAL_CLIENT_SECRET
+          kubectl version
+
+      - name: Verify Big Bang
+        run: export KUBECONFIG=$(realpath ./k8s.kubeconfig) && cd tests && chmod +x verify-bigbang.sh && ./verify-bigbang.sh
 
   clean-up:
     name: Destroy all resourcs
