@@ -59,6 +59,7 @@ def apply(
             splice_file_token(_terraform_file,"cluster_name", _app_settings.settings["general"]["cluster_name"])
             splice_file_token(_terraform_file, "cloud", _app_settings.settings["general"]["cloud"])
             splice_file_token(_terraform_file, "location", _app_settings.settings["general"]["location"])
+            splice_file_token(_terraform_file, "enable_auto_scaling", "false")
             splice_file_token(_terraform_file, "node_count", _app_settings.settings["cluster-size"]["agent_instance_count"])
             splice_file_token(_terraform_file, "max_count", _app_settings.settings["cluster-size"]["agent_instance_count"])
             splice_file_token(_terraform_file, "server_public_ip", _app_settings.settings["connectivity"]["server_public_ip"])
