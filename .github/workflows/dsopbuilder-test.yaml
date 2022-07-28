@@ -391,13 +391,13 @@ jobs:
         if: matrix.cloud == 'AzurePublicCloud'
         uses: Azure/login@v1
         with:
-          creds: ${{ env.AZURE_CREDENTIALS }}
+          creds: ${{ secrets.AZURE_PUB_CREDENTIALS }}
 
       - name: Login (gov)
         if: matrix.cloud == 'AzureUSGovernmentCloud'
         uses: Azure/login@v1
         with:
-          creds: ${{ env.AZURE_CREDENTIALS }}
+          creds: ${{ secrets.AZURE_GOV_CREDENTIALS }}
           environment: 'AzureUSGovernment'
 
       - name: Verify RKE2 is Up
@@ -454,7 +454,7 @@ jobs:
     name: Destroy all resourcs
     runs-on: ubuntu-22.04
     needs: [build-container, deploy-k8s, deploy-bigbang, verify-bigbang]
-    if: ${{ always() }}
+    if: ${{ matrix.clean_up && always() }}
 
     continue-on-error: ${{ matrix.experimental }}
     strategy:
@@ -466,6 +466,7 @@ jobs:
         vm_size: [Standard_D8_v3]
         cluster_size: [1]
         experimental: [true]
+        clean_up: [false]
         include:
           - flavor: aks
             version: 1.22.6
