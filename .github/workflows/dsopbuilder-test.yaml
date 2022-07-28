@@ -2,6 +2,9 @@ name: DSOPBuilder Test
 
 on: [workflow_dispatch, push]
 
+env:
+  FLAVORS: "aks,rke2"
+
 jobs:
   
   build-container:
@@ -32,9 +35,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        flavor: [aks]
+        flavor: [aks, rke2]
         cloud:  [AzureUSGovernmentCloud, AzurePublicCloud]
-        location: [usgovvirginia, eastus]
+        location: [usgovarizona, eastus2]
         vm_size: [Standard_D8_v3]
         cluster_size: [1]
         experimental: [true]
