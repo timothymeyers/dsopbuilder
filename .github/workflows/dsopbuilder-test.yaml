@@ -309,7 +309,7 @@ jobs:
           sed -i env-tmp/config-bigbang.json -e "s/__GH_PAT__/${{ secrets.GH_PAT }}/g"
           sed -i env-tmp/config-bigbang.json -e "s/__IB_USER__/${{ secrets.IB_USER }}/g"
           sed -i env-tmp/config-bigbang.json -e "s/__IB_PAT__/${{ secrets.IB_PAT }}/g"
-          sed -i env-tmp/config-bigbang.json -e "s/__GH_REPO__/${{ secrets.BB_REPO }}/g"
+          sed -i env-tmp/config-bigbang.json -e "s|__GH_REPO__|${{ secrets.BB_REPO }}|g"
           sed -i env-tmp/config-bigbang.json -e "s/__GH_BRANCH__/ci-dsop-${{ matrix.flavor }}_${{ matrix.cloud}}_${{ matrix.location}}_${{ matrix.vm_size}}_${{ matrix.cluster_size}}-${{ github.run_number }}$rand/g"          
 
       - name: Deploy Big Bang
