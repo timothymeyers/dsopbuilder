@@ -434,7 +434,6 @@ jobs:
         run: |
           set -o allexport
           source env-tmp/cluster.env
-          source env-tmp/vars.env
           set +o allexport
 
           #kubelogin is in dockerfile now
