@@ -128,6 +128,9 @@ jobs:
             set -o allexport
             source /env/vars.env
             set +o allexport
+            
+            gpg --version
+            sops -v
 
             mv /env/config.json config/config-${{ matrix.flavor }}.json
 
@@ -355,6 +358,9 @@ jobs:
               kubectl version
               kubectl get nodes
             fi
+
+            gpg --version
+            sops -v
 
             python3 main.py bb deploy
 
