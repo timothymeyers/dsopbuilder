@@ -4,6 +4,9 @@
 
 echo "Creating gpg key for ${1}"
 
+gpg --list-keys
+gpg --list-secret-keys
+
 gpg --quick-generate-key --batch --passphrase '' ${1}
 fingerPrint=$(gpg -K ${1} | sed -e 's/ *//;2q;d;')
 
