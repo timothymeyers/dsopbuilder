@@ -143,7 +143,7 @@ class BigBang_Stream (Stream):
         '''
         Installs flux using the bigbang install_flux.sh script.
         '''
-        command = f"./scripts/install_flux.sh --registry-username {ib_user} --registry-password {ib_pat} --registry-email {ib_email} -w 180".split()
+        command = f"./scripts/install_flux.sh --registry-username {ib_user} --registry-password {ib_pat} --registry-email {ib_email} -w 600".split()
 
         flux_dir = f"{self.get_scripts_dir()}/bigbang-for-flux"
         #print (flux_dir)
