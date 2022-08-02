@@ -361,8 +361,17 @@ jobs:
 
             gpg --version
             sops -v
+            
+            until kubectl version &> /dev/null
+            do
+              echo "Waiting for k8s server to respond..."
+              sleep 5
+            done
 
+            kubectl version
+            kubectl get nodes
             python3 main.py bb deploy
+            echo Done
 
   verify-bigbang:
     name: Verify Big Bang
